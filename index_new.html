@@ -357,7 +357,7 @@
                 <button onclick="clearFirestoreDatabase()" style="background: var(--danger);">🗑️ Réinitialiser toute la base globale</button>
                 <div style="display: flex; gap: 1rem;">
                     <button onclick="closeEditor()" style="background: #64748b;">Annuler</button>
-                    <button onclick="saveAllSessions()" style="background: var(--success);">Enregistrer & Valider</button>
+                    <button onclick="saveAllSessions()" style="background: #10b981;">Enregistrer & Valider</button>
                 </div>
             </div>
         </div>
@@ -751,7 +751,7 @@
                             const isChecked = q.correctIndices.includes(oIdx) ? "checked" : "";
                             optionsHtml += `
                                 <div class="option-row">
-                                    <input type="checkbox" ${isChecked} onchange="toggleCorrectIndex(${sIdx}, ${qIdx}, ${oIdx}, this.checked)" title="Marquer comme bonne réponse">
+                                    <input type="checkbox" ${isChecked} onchange="toggleCorrectIndex(${sIdx}, ${qIdx}, ${oIdx}, this.checked)" title="Marquer comme bonne réponse" style="width: 20px; height: 20px; cursor: pointer;">
                                     <input type="text" value="${opt}" oninput="editableSessions[${sIdx}].questions[${qIdx}].options[${oIdx}] = this.value" placeholder="Option ${oIdx+1}" style="margin-bottom:0;">
                                     <button onclick="removeOption(${sIdx}, ${qIdx}, ${oIdx})" style="background: #ef4444; padding: 0.5rem 0.8rem;">✕</button>
                                 </div>
@@ -784,7 +784,7 @@
             }
             if (isChecked) {
                 if (!editableSessions[sIdx].questions[qIdx].correctIndices.includes(oIdx)) {
-                    editableSessions[sIdx].questions[qIdx].correctIndices.push(oIdx);
+                    editableSessions[qIdx].correctIndices.push(oIdx);
                 }
             } else {
                 editableSessions[sIdx].questions[qIdx].correctIndices = editableSessions[sIdx].questions[qIdx].correctIndices.filter(i => i !== oIdx);
