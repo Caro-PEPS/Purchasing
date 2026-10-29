@@ -1,523 +1,535 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PEPS Interactions - Amphi & Cours</title>
-  <!-- Chart.js & QRCode.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <style>
-    :root {
-      --bg-dark: #0f172a;
-      --panel-bg: #1e293b;
-      --accent: #6366f1;
-      --accent-hover: #4f46e5;
-      --text-light: #f8fafc;
-      --text-muted: #94a3b8;
-      --correct: #10b981;
-      --card-bg: #334155;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background: var(--bg-dark); color: var(--text-light); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PEPS Interactions - Amphi & Cours</title>
+    <!-- Chart.js & QRCode.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --panel-bg: #1e293b;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+        }
 
-    /* LAYOUT PRINCIPAL */
-    header { background: var(--panel-bg); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
-    h1 { font-size: 1.4rem; color: var(--accent); display: flex; align-items: center; gap: 0.5rem; }
-    .session-badge { background: #334155; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.9rem; color: #e2e8f0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
 
-    main { flex: 1; display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; padding: 1.5rem; height: calc(100vh - 70px); }
-    
-    /* VUE PROJECTION */
-    .projection-container { background: var(--panel-bg); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; border: 1px solid #334155; }
-    .question-title { font-size: 1.8rem; font-weight: 600; color: #ffffff; text-align: center; margin-bottom: 1rem; }
-    .display-area { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
 
-    /* NUAGE DE MOTS */
-    .word-cloud { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; width: 100%; height: 100%; padding: 1rem; }
-    .word-item { padding: 4px 10px; border-radius: 8px; transition: all 0.3s ease; font-weight: bold; cursor: pointer; display: inline-block; }
+        /* Mode Projection (Enseignant) */
+        #teacher-view {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 2rem;
+        }
 
-    /* MUR D'IDÉES */
-    .idea-wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; width: 100%; height: 100%; overflow-y: auto; padding: 0.5rem; }
-    .idea-card { background: var(--card-bg); border-left: 4px solid var(--accent); padding: 1rem; border-radius: 8px; font-size: 1rem; line-height: 1.4; word-break: break-word; animation: fadeIn 0.4s ease; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            background: var(--panel-bg);
+            padding: 1rem 2rem;
+            border-radius: 12px;
+        }
 
-    /* CHART QCM */
-    .chart-container { width: 100%; height: 90%; max-height: 450px; position: relative; }
+        .title-area h1 {
+            font-size: 1.5rem;
+            color: #38bdf8;
+        }
 
-    /* SIDEBAR (QR CODE + ADMIN) */
-    .sidebar { display: flex; flex-direction: column; gap: 1rem; }
-    .qr-card { background: var(--panel-bg); border-radius: 12px; padding: 1.2rem; text-align: center; border: 1px solid #334155; display: flex; flex-direction: column; align-items: center; }
-    #qrcode { background: white; padding: 10px; border-radius: 8px; margin: 0.8rem 0; }
-    
-    .admin-card { background: var(--panel-bg); border-radius: 12px; padding: 1.2rem; border: 1px solid #334155; flex: 1; display: flex; flex-direction: column; gap: 0.8rem; }
-    .admin-title { font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: bold; margin-bottom: 0.3rem; }
-    
-    /* BOUTONS */
-    .btn { background: var(--accent); color: white; border: none; padding: 0.6rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; }
-    .btn:hover { background: var(--accent-hover); }
-    .btn-secondary { background: #334155; color: white; }
-    .btn-secondary:hover { background: #475569; }
-    .btn-danger { background: #ef4444; }
-    .btn-danger:hover { background: #dc2626; }
-    .btn-success { background: #10b981; }
-    .btn-success:hover { background: #059669; }
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 2rem;
+            flex-grow: 1;
+        }
 
-    /* MODAL ÉDITEUR */
-    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; padding: 1rem; }
-    .modal-content { background: var(--panel-bg); border-radius: 12px; width: 100%; max-width: 800px; max-height: 90vh; overflow-y: auto; padding: 2rem; border: 1px solid #334155; }
-    .form-group { margin-bottom: 1rem; }
-    label { display: block; margin-bottom: 0.4rem; color: var(--text-muted); font-size: 0.9rem; }
-    input, select, textarea { width: 100%; padding: 0.6rem; background: var(--bg-dark); border: 1px solid #334155; border-radius: 6px; color: white; }
+        .display-card {
+            background: var(--panel-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
 
-    /* VUE ÉTUDIANT (MOBILE) */
-    .student-view { max-width: 500px; margin: 0 auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; justify-content: center; min-height: 100vh; }
-    .qcm-option-btn { background: var(--card-bg); border: 2px solid #475569; color: white; padding: 1rem; border-radius: 8px; font-size: 1.1rem; text-align: left; cursor: pointer; width: 100%; transition: all 0.2s; }
-    .qcm-option-btn.selected { border-color: var(--accent); background: rgba(99, 102, 241, 0.2); }
+        .question-text {
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--text-light);
+        }
 
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  </style>
+        .sidebar {
+            background: var(--panel-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        #qrcode {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(8px);
+            padding: 0.75rem 1.5rem;
+            border-radius: 40px;
+            display: flex;
+            gap: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+        }
+
+        /* Mode Etudiant */
+        #student-view {
+            display: none;
+            padding: 1.5rem;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .student-card {
+            background: var(--panel-bg);
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-top: 1rem;
+        }
+
+        .opt-btn {
+            width: 100%;
+            text-align: left;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            background: #334155;
+            border-radius: 8px;
+            font-size: 1.1rem;
+        }
+
+        .opt-btn:hover {
+            background: #475569;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Word Cloud & Feed Display */
+        .cloud-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+
+        .cloud-word {
+            font-weight: bold;
+            color: #38bdf8;
+            transition: all 0.3s ease;
+        }
+
+        .feed-container {
+            width: 100%;
+            max-height: 400px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .feed-item {
+            background: #334155;
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 1.2rem;
+        }
+
+        /* Modal Editeur */
+        #editor-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-body {
+            background: var(--panel-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+    </style>
 </head>
 <body>
 
-  <!-- ==================== VUE PROJECTION (PC HDMI) ==================== -->
-  <div id="teacherView" style="display:flex; flex-direction:column; height:100vh;">
-    <header>
-      <h1>📊 PEPS Interactive</h1>
-      <span class="session-badge" id="currentSessionDisplay">Session 1</span>
-    </header>
-
-    <main>
-      <section class="projection-container">
-        <div class="question-title" id="displayQuestionTitle">Chargement de la question...</div>
-        
-        <div class="display-area" id="displayArea">
-          <!-- Nuage, Mur ou Chart généré ici -->
+    <!-- Vue Enseignant -->
+    <div id="teacher-view">
+        <div class="header">
+            <div class="title-area">
+                <h1>PEPS Interactions</h1>
+                <span id="session-title" style="color: var(--text-muted)">Session 1: Introduction aux Achats</span>
+            </div>
+            <div>
+                <span id="answers-count" style="font-weight: bold; font-size: 1.2rem; color: var(--success)">0 réponse(s)</span>
+            </div>
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1rem;">
-          <span style="color:var(--text-muted);" id="responsesCount">0 réponse(s)</span>
-          <div style="display:flex; gap:0.5rem;">
-            <button class="btn btn-secondary" onclick="exportAsPNG()">📷 Sauvegarder Image</button>
-            <button class="btn btn-secondary" onclick="toggleCorrectAnswer()" id="btnShowAnswer" style="display:none;">👁️ Révéler Réponse</button>
-          </div>
-        </div>
-      </section>
+        <div class="main-content">
+            <div class="display-card">
+                <div id="q-text" class="question-text">Chargement de la question...</div>
+                <div id="display-area" style="width: 100%; display: flex; justify-content: center;"></div>
+            </div>
 
-      <aside class="sidebar">
-        <div class="qr-card">
-          <div style="font-weight:bold; font-size:0.9rem;">Flashés pour répondre !</div>
-          <div id="qrcode"></div>
-          <div style="font-size:0.8rem; color:var(--text-muted); word-break:break-all;" id="studentUrlText"></div>
+            <div class="sidebar">
+                <div style="text-align: center;">
+                    <h3>Scannez pour participer</h3>
+                    <div id="qrcode"></div>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-top: 1rem;">
+                    Rejoindre sur mobile
+                </div>
+            </div>
         </div>
 
-        <div class="admin-card">
-          <div class="admin-title">Contrôle du Cours</div>
-          <button class="btn btn-secondary" onclick="prevQuestion()">⬅️ Q. Précédente</button>
-          <button class="btn" onclick="nextQuestion()">Q. Suivante ➡️</button>
-          <button class="btn btn-danger" onclick="clearCurrentResponses()" style="margin-top:0.5rem;">🗑️ Effacer Réponses</button>
-          <hr style="border-color:#334155; margin:0.5rem 0;">
-          <button class="btn btn-success" onclick="openModal()">⚙️ Éditeur de Sessions</button>
+        <div class="controls">
+            <button onclick="prevQuestion()">⬅ Précédent</button>
+            <span id="q-number" style="align-self: center; font-weight: bold;">Question 1/1</span>
+            <button onclick="nextQuestion()">Suivant ➡</button>
+            <button onclick="resetAnswers()" style="background: #ef4444;">🔄 Réinitialiser</button>
+            <button onclick="openEditor()" style="background: #8b5cf6;">⚙️ Éditeur de Sessions</button>
         </div>
-      </aside>
-    </main>
-  </div>
-
-  <!-- ==================== VUE ÉTUDIANT (MOBILE) ==================== -->
-  <div id="studentView" class="student-view" style="display:none;">
-    <div style="text-align:center;">
-      <h2 style="color:var(--accent);">PEPS Interaction</h2>
-      <p style="color:var(--text-muted); margin-top:0.3rem;" id="studentSessionName">En attente...</p>
     </div>
 
-    <div style="background:var(--panel-bg); padding:1.5rem; border-radius:12px; border:1px solid #334155;">
-      <h3 id="studentQuestionTitle" style="margin-bottom:1.2rem; font-size:1.2rem;">Attente de la question de l'enseignant...</h3>
-
-      <!-- FORMULAIRE Saisie Mot / Texte -->
-      <div id="studentInputForm" style="display:none;">
-        <input type="text" id="studentTextInput" placeholder="Votre réponse..." style="margin-bottom:1rem; padding:0.8rem; font-size:1rem;">
-        <button class="btn" onclick="submitStudentText()">Envoyer 🚀</button>
-      </div>
-
-      <!-- FORMULAIRE QCM -->
-      <div id="studentQcmForm" style="display:none; flex-direction:column; gap:0.8rem;">
-        <div id="qcmOptionsContainer"></div>
-        <button class="btn" onclick="submitStudentQcm()" style="margin-top:1rem;">Valider mon vote 🗳️</button>
-      </div>
-
-      <!-- CONFIRMATION -->
-      <div id="studentSuccessMsg" style="display:none; text-align:center; color:var(--correct); font-weight:bold; padding:1rem;">
-        ✅ Réponse envoyée avec succès !
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== MODAL ÉDITEUR DE SESSIONS ==================== -->
-  <div id="editorModal" class="modal">
-    <div class="modal-content">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-        <h2>⚙️ Éditeur de Sessions et Questions</h2>
-        <button class="btn btn-secondary" onclick="closeModal()" style="width:auto;">❌ Fermer</button>
-      </div>
-
-      <div class="form-group">
-        <label>Sélectionner / Créer une Session :</label>
-        <div style="display:flex; gap:0.5rem;">
-          <select id="sessionSelector" onchange="loadSelectedSession()"></select>
-          <button class="btn btn-secondary" onclick="createNewSession()" style="width:auto;">+ Nouvelle</button>
+    <!-- Vue Étudiant -->
+    <div id="student-view">
+        <h2 style="text-align: center; color: #38bdf8; margin-top: 1rem;">PEPS Interactions</h2>
+        <div class="student-card">
+            <div id="student-q-text" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 1rem;">
+                En attente de la question de l'enseignant...
+            </div>
+            <div id="student-input-area"></div>
+            <div id="student-feedback" style="display:none; color: var(--success); text-align: center; font-weight: bold; margin-top: 1rem;">
+                ✓ Réponse envoyée !
+            </div>
         </div>
-      </div>
-
-      <hr style="border-color:#334155; margin:1.5rem 0;">
-
-      <h3>Questions de la session</h3>
-      <div id="questionsList" style="margin:1rem 0; display:flex; flex-direction:column; gap:1rem;"></div>
-
-      <button class="btn btn-success" onclick="addNewQuestionField()">+ Ajouter une Question</button>
-      <button class="btn" onclick="saveAllSessions()" style="margin-top:1.5rem;">💾 Enregistrer la Session</button>
     </div>
-  </div>
 
-  <script>
-    // --- CONFIGURATION FIREBASE (Mode Démo / Firestore Public) ---
-const firebaseConfig = {
-  apiKey: "AIzaSyDter1HkLbMMIw5SZT-c6iiG_LcSMkciC8",
-  authDomain: "peps-interactions.firebaseapp.com",
-  projectId: "peps-interactions",
-  storageBucket: "peps-interactions.firebasestorage.app",
-  messagingSenderId: "195505715234",
-  appId: "1:195505715234:web:f2245e3b0f4603788a327b"
-};
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    <!-- Modal Éditeur -->
+    <div id="editor-modal">
+        <div class="modal-body">
+            <h2 style="margin-bottom: 1rem;">Éditeur de Questions / Sessions</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">Collez le JSON de votre session ci-dessous :</p>
+            <textarea id="json-input" style="width: 100%; height: 300px; background: #0f172a; color: white; padding: 1rem; border-radius: 8px; font-family: monospace;"></textarea>
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
+                <button onclick="closeEditor()" style="background: #64748b;">Annuler</button>
+                <button onclick="saveSession()">Enregistrer la Session</button>
+            </div>
+        </div>
+    </div>
 
-    // --- DONNÉES PAR DÉFAUT (Session 1) ---
-    let defaultSessions = {
-      "Session 1": [
-        { id: "q1", title: "1. Qu'attendez-vous de ce module achats ?", type: "wall" },
-        { id: "q2", title: "2. En 1 mot, c'est quoi les achats pour vous ?", type: "cloud" },
-        { id: "q3", title: "3. Selon vous, quels sont les responsabilités d'un acheteur moderne aujourd'hui ?", type: "qcm", options: ["Négocier les prix", "Gérer la relation fournisseur", "Réduire l'empreinte carbone / RSE", "Innover avec l'écosystème"], correct: [1, 2] },
-        { id: "q4", title: "4. Quel(s) thème(s) aimeriez-vous voir abordés ?", type: "wall" },
-        { id: "q5", title: "5. Qu'avez-vous retenu de cette session en 1 mot ?", type: "cloud" }
-      ]
-    };
-
-    // ETAT APPLI
-    let sessions = JSON.parse(localStorage.getItem("peps_sessions")) || defaultSessions;
-    let currentSessionKey = "Session 1";
-    let currentQuestionIdx = 0;
-    let chartInstance = null;
-    let unsubscribeResponses = null;
-    let selectedQcmOptions = [];
-
-    // DETECTION VUE
-    const urlParams = new URLSearchParams(window.location.search);
-    const isStudent = urlParams.get("role") === "student";
-
-    window.onload = () => {
-      if (isStudent) {
-        document.getElementById("teacherView").style.display = "none";
-        document.getElementById("studentView").style.display = "flex";
-        initStudentView();
-      } else {
-        initTeacherView();
-      }
-    };
-
-    // --- LOGIQUE ENSEIGNANT ---
-    function initTeacherView() {
-      // Générer QR Code
-      const studentUrl = window.location.origin + window.location.pathname + "?role=student";
-      document.getElementById("qrcode").innerHTML = "";
-      new QRCode(document.getElementById("qrcode"), { text: studentUrl, width: 140, height: 140 });
-      document.getElementById("studentUrlText").innerText = studentUrl;
-
-      // Sync Session active sur Firestore
-      syncStateToFirebase();
-      renderCurrentQuestion();
-    }
-
-    function syncStateToFirebase() {
-      db.collection("appState").doc("current").set({
-        sessionKey: currentSessionKey,
-        question: getCurrentQuestion()
-      });
-    }
-
-    function getCurrentQuestion() {
-      return sessions[currentSessionKey][currentQuestionIdx];
-    }
-
-    function renderCurrentQuestion() {
-      const q = getCurrentQuestion();
-      document.getElementById("displayQuestionTitle").innerText = q.title;
-      document.getElementById("currentSessionDisplay").innerText = currentSessionKey;
-      document.getElementById("btnShowAnswer").style.display = (q.type === 'qcm' && q.correct) ? 'block' : 'none';
-
-      const container = document.getElementById("displayArea");
-      container.innerHTML = "";
-
-      if (unsubscribeResponses) unsubscribeResponses();
-
-      // Ecoute des réponses Firebase
-      unsubscribeResponses = db.collection("responses")
-        .where("questionId", "==", q.id)
-        .onSnapshot(snapshot => {
-          const responses = snapshot.docs.map(doc => doc.data().value);
-          document.getElementById("responsesCount").innerText = `${responses.length} réponse(s)`;
-          
-          if (q.type === 'cloud') renderWordCloud(responses, container);
-          else if (q.type === 'wall') renderIdeaWall(responses, container);
-          else if (q.type === 'qcm') renderQcmChart(responses, q, container);
-        });
-
-      syncStateToFirebase();
-    }
-
-    // RENDU NUAGE
-    function renderWordCloud(data, container) {
-      container.innerHTML = '<div class="word-cloud" id="cloudBox"></div>';
-      const box = document.getElementById("cloudBox");
-      const counts = {};
-      data.forEach(w => counts[w.toLowerCase()] = (counts[w.toLowerCase()] || 0) + 1);
-
-      Object.keys(counts).forEach(word => {
-        const span = document.createElement("span");
-        span.className = "word-item";
-        span.innerText = word;
-        const size = Math.min(18 + counts[word] * 8, 60);
-        span.style.fontSize = `${size}px`;
-        span.style.color = getWordColor(word);
-        box.appendChild(span);
-      });
-    }
-
-    // RENDU MUR
-    function renderIdeaWall(data, container) {
-      container.innerHTML = '<div class="idea-wall" id="wallBox"></div>';
-      const box = document.getElementById("wallBox");
-      data.forEach(text => {
-        const card = document.createElement("div");
-        card.className = "idea-card";
-        card.innerText = text;
-        box.appendChild(card);
-      });
-    }
-
-    // RENDU QCM (CHART.JS)
-    function renderQcmChart(data, q, container) {
-      container.innerHTML = '<div class="chart-container"><canvas id="qcmChart"></canvas></div>';
-      const ctx = document.getElementById("qcmChart").getContext("2d");
-
-      const counts = q.options.map((_, idx) => data.filter(v => Array.isArray(v) ? v.includes(idx) : v === idx).length);
-
-      if (chartInstance) chartInstance.destroy();
-
-      chartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: q.options,
-          datasets: [{
-            label: 'Votes',
-            data: counts,
-            backgroundColor: '#6366f1',
-            borderRadius: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true, ticks: { color: '#94a3b8', stepSize: 1 } }, x: { ticks: { color: '#ffffff', font: { size: 14 } } } }
-        }
-      });
-    }
-
-    function toggleCorrectAnswer() {
-      const q = getCurrentQuestion();
-      if (!chartInstance || !q.correct) return;
-      
-      const colors = q.options.map((_, idx) => q.correct.includes(idx) ? '#10b981' : '#334155');
-      chartInstance.data.datasets[0].backgroundColor = colors;
-      chartInstance.update();
-    }
-
-    function nextQuestion() {
-      if (currentQuestionIdx < sessions[currentSessionKey].length - 1) {
-        currentQuestionIdx++;
-        renderCurrentQuestion();
-      }
-    }
-
-    function prevQuestion() {
-      if (currentQuestionIdx > 0) {
-        currentQuestionIdx--;
-        renderCurrentQuestion();
-      }
-    }
-
-    function clearCurrentResponses() {
-      if (confirm("Effacer toutes les réponses de cette question ?")) {
-        const q = getCurrentQuestion();
-        db.collection("responses").where("questionId", "==", q.id).get().then(snap => {
-          snap.forEach(doc => doc.ref.delete());
-        });
-      }
-    }
-
-    // --- LOGIQUE ÉTUDIANT ---
-    let studentCurrentQuestion = null;
-
-    function initStudentView() {
-      db.collection("appState").doc("current").onSnapshot(doc => {
-        const state = doc.data();
-        if (!state) return;
-
-        document.getElementById("studentSessionName").innerText = state.sessionKey;
-        studentCurrentQuestion = state.question;
-        document.getElementById("studentQuestionTitle").innerText = studentCurrentQuestion.title;
-
-        // Reset
-        document.getElementById("studentInputForm").style.display = "none";
-        document.getElementById("studentQcmForm").style.display = "none";
-        document.getElementById("studentSuccessMsg").style.display = "none";
-
-        if (studentCurrentQuestion.type === 'cloud' || studentCurrentQuestion.type === 'wall') {
-          document.getElementById("studentInputForm").style.display = "block";
-        } else if (studentCurrentQuestion.type === 'qcm') {
-          document.getElementById("studentQcmForm").style.display = "flex";
-          renderStudentQcmOptions(studentCurrentQuestion.options);
-        }
-      });
-    }
-
-    function renderStudentQcmOptions(options) {
-      const container = document.getElementById("qcmOptionsContainer");
-      container.innerHTML = "";
-      selectedQcmOptions = [];
-
-      options.forEach((opt, idx) => {
-        const btn = document.createElement("button");
-        btn.className = "qcm-option-btn";
-        btn.innerText = opt;
-        btn.onclick = () => {
-          btn.classList.toggle("selected");
-          if (selectedQcmOptions.includes(idx)) {
-            selectedQcmOptions = selectedQcmOptions.filter(i => i !== idx);
-          } else {
-            selectedQcmOptions.push(idx);
-          }
+    <script>
+        // Configuration Firebase
+        const firebaseConfig = {
+          apiKey: "AIzaSyDter1HkLbMMIw5SZT-c6iiG_LcSMkciC8",
+          authDomain: "peps-interactions.firebaseapp.com",
+          projectId: "peps-interactions",
+          storageBucket: "peps-interactions.firebasestorage.app",
+          messagingSenderId: "195505715234",
+          appId: "1:195505715234:web:f2245e3b0f4603788a327b"
         };
-        container.appendChild(btn);
-      });
-    }
 
-    function submitStudentText() {
-      const input = document.getElementById("studentTextInput");
-      if (!input.value.trim()) return;
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-      db.collection("responses").add({
-        questionId: studentCurrentQuestion.id,
-        value: input.value.trim(),
-        timestamp: new Date()
-      }).then(() => {
-        input.value = "";
-        document.getElementById("studentInputForm").style.display = "none";
-        document.getElementById("studentSuccessMsg").style.display = "block";
-      });
-    }
+        // Paramètres par défaut
+        let currentSession = {
+            title: "Session 1 : Négociation & Achats",
+            questions: [
+                { id: "q1", type: "mcq", text: "Quel est l'objectif principal du BATNA (MESORE) ?", options: ["Avoir un prix le plus bas", "Connaître sa meilleure solution de repli", "Mettre la pression sur le fournisseur", "Remplir une exigence ISO"] },
+                { id: "q2", type: "wordcloud", text: "En un mot, qu'évoque pour vous une négociation réussie ?" },
+                { id: "q3", type: "open", text: "Quels sont selon vous les freins majeurs à l'intégration des critères RSE dans les achats ?" }
+            ]
+        };
 
-    function submitStudentQcm() {
-      if (selectedQcmOptions.length === 0) return;
+        let currentQIndex = 0;
+        let isStudent = window.location.search.includes('role=student');
+        let chartInstance = null;
+        let hasVotedLocally = false;
 
-      db.collection("responses").add({
-        questionId: studentCurrentQuestion.id,
-        value: selectedQcmOptions,
-        timestamp: new Date()
-      }).then(() => {
-        document.getElementById("studentQcmForm").style.display = "none";
-        document.getElementById("studentSuccessMsg").style.display = "block";
-      });
-    }
+        // Détection Enseignant vs Etudiant
+        if (isStudent) {
+            document.getElementById('teacher-view').style.display = 'none';
+            document.getElementById('student-view').style.display = 'block';
+            listenCurrentStateStudent();
+        } else {
+            initTeacherView();
+        }
 
-    // --- UTILITAIRES ET COULEURS ---
-    function getWordColor(word) {
-      const colors = ['#38bdf8', '#a855f7', '#f43f5e', '#34d399', '#fbbf24', '#f97316', '#2dd4bf'];
-      let hash = 0;
-      for (let i = 0; i < word.length; i++) hash = word.charCodeAt(i) + ((hash << 5) - hash);
-      return colors[Math.abs(hash) % colors.length];
-    }
+        // --- ENSEIGNANT ---
+        function initTeacherView() {
+            new QRCode(document.getElementById("qrcode"), {
+                text: window.location.origin + window.location.pathname + "?role=student",
+                width: 180,
+                height: 180
+            });
+            
+            // Publier la question active au chargement
+            publishCurrentState();
+            listenToAnswers();
+        }
 
-    // MODAL & ÉDITEUR
-    function openModal() {
-      document.getElementById("editorModal").style.display = "flex";
-      populateSessionSelector();
-      loadSelectedSession();
-    }
-    function closeModal() { document.getElementById("editorModal").style.display = "none"; }
+        function publishCurrentState() {
+            const q = currentSession.questions[currentQIndex];
+            db.collection("state").doc("active").set({
+                qIndex: currentQIndex,
+                question: q,
+                sessionTitle: currentSession.title
+            });
+            document.getElementById("q-text").innerText = q.text;
+            document.getElementById("q-number").innerText = `Question ${currentQIndex + 1}/${currentSession.questions.length}`;
+            document.getElementById("session-title").innerText = currentSession.title;
+        }
 
-    function populateSessionSelector() {
-      const select = document.getElementById("sessionSelector");
-      select.innerHTML = "";
-      Object.keys(sessions).forEach(key => {
-        const opt = document.createElement("option");
-        opt.value = key;
-        opt.innerText = key;
-        if (key === currentSessionKey) opt.selected = true;
-        select.appendChild(opt);
-      });
-    }
+        function listenToAnswers() {
+            const q = currentSession.questions[currentQIndex];
+            db.collection("answers").doc(q.id).onSnapshot(doc => {
+                const data = doc.exists ? doc.data() : { responses: [] };
+                renderResults(q, data.responses || []);
+            });
+        }
 
-    function loadSelectedSession() {
-      currentSessionKey = document.getElementById("sessionSelector").value;
-      const qList = document.getElementById("questionsList");
-      qList.innerHTML = "";
+        function renderResults(q, responses) {
+            const area = document.getElementById("display-area");
+            document.getElementById("answers-count").innerText = `${responses.length} réponse(s)`;
+            area.innerHTML = "";
 
-      sessions[currentSessionKey].forEach((q, idx) => {
-        const div = document.createElement("div");
-        div.style.background = "var(--bg-dark)";
-        div.style.padding = "1rem";
-        div.style.borderRadius = "8px";
-        div.innerHTML = `
-          <div class="form-group">
-            <label>Question ${idx + 1} Intitulé :</label>
-            <input type="text" value="${q.title}" id="q_title_${idx}">
-          </div>
-          <div class="form-group">
-            <label>Type :</label>
-            <select id="q_type_${idx}">
-              <option value="cloud" ${q.type==='cloud'?'selected':''}>Nuage de mots</option>
-              <option value="wall" ${q.type==='wall'?'selected':''}>Mur d'idées (Texte libre)</option>
-              <option value="qcm" ${q.type==='qcm'?'selected':''}>QCM / Sondage</option>
-            </select>
-          </div>
-        `;
-        qList.appendChild(div);
-      });
-    }
+            if (q.type === "mcq" || q.type === "poll") {
+                const canvas = document.createElement("canvas");
+                area.appendChild(canvas);
+                
+                const counts = {};
+                q.options.forEach(opt => counts[opt] = 0);
+                responses.forEach(r => { if (counts[r] !== undefined) counts[r]++; });
 
-    function saveAllSessions() {
-      localStorage.setItem("peps_sessions", JSON.stringify(sessions));
-      closeModal();
-      currentQuestionIdx = 0;
-      renderCurrentQuestion();
-    }
+                if (chartInstance) chartInstance.destroy();
+                chartInstance = new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels: q.options,
+                        datasets: [{
+                            label: 'Votes',
+                            data: Object.values(counts),
+                            backgroundColor: '#38bdf8'
+                        }]
+                    },
+                    options: {
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            } else if (q.type === "wordcloud") {
+                const cloudDiv = document.createElement("div");
+                cloudDiv.className = "cloud-container";
+                
+                const freq = {};
+                responses.forEach(r => {
+                    const word = r.trim().toLowerCase();
+                    if (word) freq[word] = (freq[word] || 0) + 1;
+                });
 
-    function createNewSession() {
-      const name = prompt("Nom de la nouvelle session (ex: Session 2):");
-      if (name && !sessions[name]) {
-        sessions[name] = [{ id: "q_" + Date.now(), title: "1. Nouvelle question", type: "cloud" }];
-        currentSessionKey = name;
-        populateSessionSelector();
-        loadSelectedSession();
-      }
-    }
+                Object.keys(freq).forEach(word => {
+                    const span = document.createElement("span");
+                    span.className = "cloud-word";
+                    span.innerText = word + " ";
+                    span.style.fontSize = `${Math.min(1.5 + freq[word] * 0.8, 4)}rem`;
+                    cloudDiv.appendChild(span);
+                });
+                area.appendChild(cloudDiv);
+            } else if (q.type === "open") {
+                const feedDiv = document.createElement("div");
+                feedDiv.className = "feed-container";
+                responses.forEach(r => {
+                    const item = document.createElement("div");
+                    item.className = "feed-item";
+                    item.innerText = r;
+                    feedDiv.appendChild(item);
+                });
+                area.appendChild(feedDiv);
+            }
+        }
 
-    function exportAsPNG() {
-      alert("Vous pouvez effectuer une capture d'écran (Win + Maj + S) pour sauvegarder instantanément le nuage ou le résultat en image !");
-    }
-  </script>
+        function nextQuestion() {
+            if (currentQIndex < currentSession.questions.length - 1) {
+                currentQIndex++;
+                publishCurrentState();
+                listenToAnswers();
+            }
+        }
+
+        function prevQuestion() {
+            if (currentQIndex > 0) {
+                currentQIndex--;
+                publishCurrentState();
+                listenToAnswers();
+            }
+        }
+
+        function resetAnswers() {
+            const q = currentSession.questions[currentQIndex];
+            db.collection("answers").doc(q.id).set({ responses: [] });
+        }
+
+        // --- ETUDIANT ---
+        function listenCurrentStateStudent() {
+            db.collection("state").doc("active").onSnapshot(doc => {
+                if (!doc.exists) return;
+                const data = doc.data();
+                const q = data.question;
+
+                document.getElementById("student-q-text").innerText = q.text;
+                const area = document.getElementById("student-input-area");
+                area.innerHTML = "";
+                document.getElementById("student-feedback").style.display = "none";
+                hasVotedLocally = false;
+
+                if (q.type === "mcq" || q.type === "poll") {
+                    q.options.forEach(opt => {
+                        const btn = document.createElement("button");
+                        btn.className = "opt-btn";
+                        btn.innerText = opt;
+                        btn.onclick = () => submitAnswer(q.id, opt, false);
+                        area.appendChild(btn);
+                    });
+                } else {
+                    const input = document.createElement("input");
+                    input.type = "text";
+                    input.id = "txt-answer";
+                    input.placeholder = q.type === "wordcloud" ? "Un seul mot..." : "Votre réponse...";
+                    
+                    const btn = document.createElement("button");
+                    btn.style.width = "100%";
+                    btn.innerText = "Envoyer";
+                    
+                    // Autorise les envois multiples pour nuage de mots et question ouverte
+                    btn.onclick = () => {
+                        const val = document.getElementById("txt-answer").value.trim();
+                        if (val) {
+                            submitAnswer(q.id, val, true);
+                            document.getElementById("txt-answer").value = ""; // Vider le champ pour la réponse suivante
+                        }
+                    };
+
+                    area.appendChild(input);
+                    area.appendChild(btn);
+                }
+            });
+        }
+
+        function submitAnswer(qId, value, allowMultiple) {
+            if (hasVotedLocally && !allowMultiple) return;
+
+            db.collection("answers").doc(qId).set({
+                responses: firebase.firestore.FieldValue.arrayUnion(value)
+            }, { merge: true }).then(() => {
+                if (!allowMultiple) {
+                    hasVotedLocally = true;
+                    document.getElementById("student-input-area").innerHTML = "";
+                }
+                const feedback = document.getElementById("student-feedback");
+                feedback.style.display = "block";
+                setTimeout(() => { feedback.style.display = "none"; }, 2000);
+            });
+        }
+
+        // --- EDITEUR ---
+        function openEditor() {
+            document.getElementById("json-input").value = JSON.stringify(currentSession, null, 2);
+            document.getElementById("editor-modal").style.display = "flex";
+        }
+
+        function closeEditor() {
+            document.getElementById("editor-modal").style.display = "none";
+        }
+
+        function saveSession() {
+            try {
+                const parsed = JSON.parse(document.getElementById("json-input").value);
+                currentSession = parsed;
+                currentQIndex = 0;
+                publishCurrentState();
+                listenToAnswers();
+                closeEditor();
+            } catch (e) {
+                alert("Erreur dans le format JSON : " + e.message);
+            }
+        }
+    </script>
 </body>
 </html>
