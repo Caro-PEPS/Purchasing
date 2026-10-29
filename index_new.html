@@ -38,7 +38,7 @@
             flex-direction: column;
         }
 
-        /* Mode Projection (Enseignant) */
+        /* Mode Projection (Enseignante) */
         #teacher-view {
             display: flex;
             flex-direction: column;
@@ -168,6 +168,9 @@
             border-radius: 8px;
             font-size: 1.1rem;
             transition: background 0.2s;
+            color: white;
+            border: 2px solid transparent;
+            cursor: pointer;
         }
 
         .opt-btn:hover {
@@ -175,8 +178,8 @@
         }
 
         .opt-btn.selected {
-            background: var(--accent);
-            border: 2px solid #38bdf8;
+            background: #1e3a8a;
+            border-color: #38bdf8;
         }
 
         input[type="text"], select, textarea {
@@ -283,16 +286,16 @@
 </head>
 <body>
 
-    <!-- VUE ENSEIGNANT -->
+    <!-- VUE ENSEIGNANTE -->
     <div id="teacher-view">
         <div class="header">
             <div class="title-area">
                 <h1>PEPS Interactions</h1>
-                <span id="session-title" style="color: var(--text-muted)">Chargement...</span>
+                <span id="session-title" style="color: var(--text-muted)">Chargement de la session...</span>
             </div>
             <div style="display: flex; gap: 1.5rem; align-items: center;">
                 <span id="answers-count" style="font-weight: bold; font-size: 1.2rem; color: var(--success)">0 réponse(s)</span>
-                <button onclick="takeScreenshot()" style="background: #0d9488;">📸 Enregistrer</button>
+                <button onclick="takeScreenshot()" style="background: #0d9488;">📸 Capturer l'écran</button>
             </div>
         </div>
 
@@ -304,35 +307,36 @@
 
             <div class="sidebar">
                 <div style="text-align: center;">
-                    <h3>Scannez pour participer</h3>
+                    <h3 style="color: #38bdf8;">⚡ À vous de jouer !</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.5rem;">Scannez le QR code pour rejoindre l'interaction :</p>
                     <div id="qrcode"></div>
                 </div>
                 <div style="font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-top: 1rem;">
-                    Rejoindre sur mobile
+                    Accès direct depuis smartphone & tablette
                 </div>
             </div>
         </div>
 
         <div class="controls">
-            <button onclick="prevQuestion()">⬅ Précédent</button>
+            <button onclick="prevQuestion()">⬅ Précédente</button>
             <span id="q-number" style="font-weight: bold; min-width: 90px; text-align: center;">Q 1/1</span>
-            <button onclick="nextQuestion()">Suivant ➡</button>
-            <button onclick="resetCurrentAnswers()" style="background: #f59e0b;" title="Reset réponses de cette question">🔄 Reset Question</button>
-            <button onclick="resetAllSessionAnswers()" style="background: var(--danger);" title="Reset toutes les réponses de la session">🗑️ Reset Global</button>
+            <button onclick="nextQuestion()">Suivante ➡</button>
+            <button onclick="resetCurrentAnswers()" style="background: #f59e0b;" title="Effacer les réponses de cette question">🔄 Reset Question</button>
+            <button onclick="resetAllSessionAnswers()" style="background: var(--danger);" title="Effacer toutes les réponses de la session">🗑️ Reset Session</button>
             <button onclick="openEditor()" style="background: #8b5cf6;">⚙️ Éditeur de Sessions</button>
         </div>
     </div>
 
     <!-- VUE ÉTUDIANT -->
     <div id="student-view">
-        <h2 style="text-align: center; color: #38bdf8; margin-top: 1rem;">PEPS Interactions</h2>
+        <h2 style="text-align: center; color: #38bdf8; margin-top: 1rem;">✨ PEPS Interactions</h2>
         <div class="student-card">
-            <div id="student-q-text" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 1rem;">
-                En attente de la question de l'enseignant...
+            <div id="student-q-text" style="font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem; text-align: center; color: #f8fafc;">
+                Soyez prêt(e)s !<br><span style="font-size: 1rem; font-weight: normal; color: var(--text-muted);">Votre enseignante va bientôt afficher la question... 🚀</span>
             </div>
             <div id="student-input-area"></div>
-            <div id="student-feedback" style="display:none; color: var(--success); text-align: center; font-weight: bold; margin-top: 1rem;">
-                ✓ Réponse envoyée !
+            <div id="student-feedback" style="display:none; color: var(--success); text-align: center; font-weight: bold; margin-top: 1rem; font-size: 1.1rem;">
+                🎉 Bien reçu ! Votre réponse a été envoyée avec succès !
             </div>
         </div>
     </div>
@@ -340,20 +344,20 @@
     <!-- MODAL ÉDITEUR DE SESSIONS -->
     <div id="editor-modal">
         <div class="modal-body">
-            <h2 style="margin-bottom: 1rem; color: #38bdf8;">⚙️ Éditeur Avancé de Sessions & Questions</h2>
-            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Créez et configurez vos sessions, thématiques et QCM (avec coche pour la bonne réponse).</p>
+            <h2 style="margin-bottom: 0.5rem; color: #38bdf8;">⚙️ Éditeur de Sessions & Questions</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Configurez vos cours, choisissez le type d'interaction et cochez <b>une ou plusieurs bonnes réponses</b> pour vos QCM.</p>
             
             <div id="sessions-editor-container"></div>
 
             <div style="display: flex; gap: 1rem; margin-top: 1rem; margin-bottom: 2rem;">
-                <button onclick="addSession()" style="background: #059669;">➕ Ajouter une Session</button>
+                <button onclick="addSession()" style="background: #059669;">➕ Ajouter une nouvelle Session</button>
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #334155; padding-top: 1.5rem;">
-                <button onclick="clearFirestoreDatabase()" style="background: var(--danger);">🗑️ Vider toute la base de données</button>
+                <button onclick="clearFirestoreDatabase()" style="background: var(--danger);">🗑️ Réinitialiser toute la base globale</button>
                 <div style="display: flex; gap: 1rem;">
                     <button onclick="closeEditor()" style="background: #64748b;">Annuler</button>
-                    <button onclick="saveAllSessions()" style="background: var(--success);">Enregistrer & Appliquer</button>
+                    <button onclick="saveAllSessions()" style="background: var(--success);">Enregistrer & Valider</button>
                 </div>
             </div>
         </div>
@@ -380,7 +384,7 @@
                 title: "Session 1 : Négociation & Achats",
                 questions: [
                     { id: "q1", type: "open", text: "Quels sont vos premiers retours sur le cas pratique ?" },
-                    { id: "q2", type: "mcq", text: "Quel est l'objectif principal du BATNA (MESORE) ?", options: ["Avoir un prix le plus bas", "Connaître sa meilleure solution de repli", "Mettre la pression sur le fournisseur", "Remplir une exigence ISO"], correctIndex: 1 },
+                    { id: "q2", type: "mcq", text: "Quels sont les objectifs clés de la MESORE (BATNA) ?", options: ["Obtenir le prix le plus bas possible", "Identifier sa meilleure alternative de repli", "Instaurer un climat d'échange constructif", "Éviter d'accepter un accord défavorable"], correctIndices: [1, 3] },
                     { id: "q3", type: "wordcloud", text: "En un mot, qu'évoque pour vous une négociation réussie ?" },
                     { id: "q4", type: "poll", text: "Quel canal privilégiez-vous pour vos briefs fournisseurs ?", options: ["Email formel", "Appui téléphonique", "Réunion en présentiel", "Atelier collaboratif"] }
                 ]
@@ -403,7 +407,7 @@
             initTeacherView();
         }
 
-        // --- ENSEIGNANT ---
+        // --- VUE ENSEIGNANTE ---
         function initTeacherView() {
             new QRCode(document.getElementById("qrcode"), {
                 text: window.location.origin + window.location.pathname + "?role=student",
@@ -457,7 +461,7 @@
 
         function renderResults(q, responses) {
             const area = document.getElementById("display-area");
-            document.getElementById("answers-count").innerText = `${responses.length} réponse(s)`;
+            document.getElementById("answers-count").innerText = `${responses.length} participation(s)`;
             area.innerHTML = "";
 
             if (q.type === "mcq" || q.type === "poll") {
@@ -466,11 +470,18 @@
                 
                 const counts = {};
                 if(q.options) q.options.forEach(opt => counts[opt] = 0);
-                responses.forEach(r => { if (counts[r] !== undefined) counts[r]++; });
+                
+                responses.forEach(r => {
+                    if (Array.isArray(r)) {
+                        r.forEach(val => { if (counts[val] !== undefined) counts[val]++; });
+                    } else if (counts[r] !== undefined) {
+                        counts[r]++;
+                    }
+                });
 
                 let backgroundColors = pastelColors.slice(0, (q.options || []).length);
-                if (q.type === "mcq" && q.correctIndex !== undefined && q.correctIndex !== "") {
-                    backgroundColors = q.options.map((_, idx) => idx === parseInt(q.correctIndex) ? '#10b981' : '#334155');
+                if (q.type === "mcq" && q.correctIndices && Array.isArray(q.correctIndices)) {
+                    backgroundColors = q.options.map((_, idx) => q.correctIndices.includes(idx) ? '#10b981' : '#334155');
                 }
 
                 if (chartInstance) chartInstance.destroy();
@@ -501,13 +512,13 @@
                 
                 const freq = {};
                 responses.forEach(r => {
-                    const word = r.trim().toLowerCase();
+                    const word = String(r).trim().toLowerCase();
                     if (word) freq[word] = (freq[word] || 0) + 1;
                 });
 
                 const words = Object.keys(freq);
                 if (words.length === 0) {
-                    cloudDiv.innerHTML = "<p style='color: var(--text-muted);'>En attente de mots...</p>";
+                    cloudDiv.innerHTML = "<p style='color: var(--text-muted); font-size: 1.2rem;'>Les réponses vont apparaître ici en direct...</p>";
                 } else {
                     words.forEach((word, index) => {
                         const span = document.createElement("span");
@@ -526,7 +537,7 @@
                 postsDiv.className = "posts-container";
                 
                 if (responses.length === 0) {
-                    postsDiv.innerHTML = "<p style='color: var(--text-muted); grid-column: 1/-1; text-align: center;'>En attente de réponses...</p>";
+                    postsDiv.innerHTML = "<p style='color: var(--text-muted); grid-column: 1/-1; text-align: center; font-size: 1.2rem;'>En attente des premiers post-its des étudiants...</p>";
                 } else {
                     const postColors = ['#fef08a', '#bbf7d0', '#bae6fd', '#fde68a', '#e9d5ff', '#fbcfe8'];
                     responses.forEach((r, idx) => {
@@ -585,7 +596,7 @@
                 currentSession.questions.forEach(q => {
                     batch.set(db.collection("answers").doc(q.id), { responses: [] });
                 });
-                batch.commit().then(() => alert("Session réinitialisée avec succès !"));
+                batch.commit().then(() => alert("Toutes les réponses de la session ont été effacées !"));
             }
         }
 
@@ -593,48 +604,83 @@
             const captureElement = document.getElementById("capture-area");
             html2canvas(captureElement, { backgroundColor: '#1e293b' }).then(canvas => {
                 const link = document.createElement('a');
-                link.download = `peps-interactions-capture-${Date.now()}.png`;
+                link.download = `peps-interactions-${Date.now()}.png`;
                 link.href = canvas.toDataURL();
                 link.click();
             });
         }
 
-        // --- ÉTUDIANT ---
+        // --- VUE ÉTUDIANT ---
         function listenCurrentStateStudent() {
             db.collection("state").doc("active").onSnapshot(doc => {
                 if (!doc.exists) return;
                 const data = doc.data();
                 const q = data.question;
 
-                document.getElementById("student-q-text").innerText = q.text;
+                document.getElementById("student-q-text").innerHTML = `
+                    <div style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 1px;">Question en cours</div>
+                    ${q.text}
+                `;
                 const area = document.getElementById("student-input-area");
                 area.innerHTML = "";
                 document.getElementById("student-feedback").style.display = "none";
 
                 if (q.type === "mcq" || q.type === "poll") {
                     if(q.options) {
+                        let selectedOptions = [];
+                        
                         q.options.forEach(opt => {
                             const btn = document.createElement("button");
                             btn.className = "opt-btn";
                             btn.innerText = opt;
                             btn.onclick = () => {
-                                document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
-                                btn.classList.add('selected');
-                                submitAnswer(q.id, opt, false);
+                                if (q.type === "mcq") {
+                                    // Choix multiples
+                                    if (selectedOptions.includes(opt)) {
+                                        selectedOptions = selectedOptions.filter(item => item !== opt);
+                                        btn.classList.remove('selected');
+                                    } else {
+                                        selectedOptions.push(opt);
+                                        btn.classList.add('selected');
+                                    }
+                                } else {
+                                    // Choix unique pour sondage
+                                    document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+                                    btn.classList.add('selected');
+                                    selectedOptions = [opt];
+                                }
                             };
                             area.appendChild(btn);
                         });
+
+                        const submitBtn = document.createElement("button");
+                        submitBtn.style.width = "100%";
+                        submitBtn.style.marginTop = "1rem";
+                        submitBtn.style.padding = "0.9rem";
+                        submitBtn.style.fontSize = "1.1rem";
+                        submitBtn.style.background = "var(--success)";
+                        submitBtn.innerText = "🚀 Envoyer ma sélection";
+                        submitBtn.onclick = () => {
+                            if (selectedOptions.length === 0) {
+                                alert("Merci de sélectionner au moins une option !");
+                                return;
+                            }
+                            submitAnswer(q.id, q.type === "mcq" ? selectedOptions : selectedOptions[0], false);
+                        };
+                        area.appendChild(submitBtn);
                     }
                 } else {
                     const input = document.createElement("input");
                     input.type = "text";
                     input.id = "txt-answer";
-                    input.placeholder = q.type === "wordcloud" ? "Entrez votre mot..." : "Votre réponse...";
+                    input.placeholder = q.type === "wordcloud" ? "Tapez un mot-clé..." : "Partagez votre idée ici...";
                     
                     const btn = document.createElement("button");
                     btn.style.width = "100%";
                     btn.style.marginTop = "0.5rem";
-                    btn.innerText = "Envoyer ma réponse";
+                    btn.style.padding = "0.9rem";
+                    btn.style.fontSize = "1.1rem";
+                    btn.innerText = "💡 Partager la réponse";
                     
                     btn.onclick = () => {
                         const val = document.getElementById("txt-answer").value.trim();
@@ -662,7 +708,7 @@
             });
         }
 
-        // --- ÉDITEUR VISIBLE AVANCÉ ---
+        // --- ÉDITEUR DE SESSIONS AVANCÉ ---
         function openEditor() {
             editableSessions = JSON.parse(JSON.stringify(sessionsData));
             renderEditorForm();
@@ -682,11 +728,11 @@
                 sDiv.className = "session-block";
                 sDiv.innerHTML = `
                     <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
-                        <input type="text" value="${session.title}" oninput="editableSessions[${sIdx}].title = this.value" placeholder="Nom de la session" style="margin-bottom:0; font-weight:bold;">
-                        <button onclick="removeSession(${sIdx})" style="background: var(--danger); padding: 0.6rem 1rem;">Supprimer Session</button>
+                        <input type="text" value="${session.title}" oninput="editableSessions[${sIdx}].title = this.value" placeholder="Titre du cours / de la session" style="margin-bottom:0; font-weight:bold;">
+                        <button onclick="removeSession(${sIdx})" style="background: var(--danger); padding: 0.6rem 1rem;">Supprimer la Session</button>
                     </div>
                     <div id="questions-container-${sIdx}"></div>
-                    <button onclick="addQuestion(${sIdx})" style="background: #2563eb; margin-top: 1rem; font-size:0.9rem;">➕ Ajouter une question</button>
+                    <button onclick="addQuestion(${sIdx})" style="background: #2563eb; margin-top: 1rem; font-size:0.9rem;">➕ Ajouter une question à ce cours</button>
                 `;
                 container.appendChild(sDiv);
 
@@ -697,28 +743,31 @@
                     
                     let optionsHtml = "";
                     if (q.type === "mcq" || q.type === "poll") {
-                        optionsHtml = `<div style="margin-top: 0.75rem;"><label style="font-size:0.9rem; color:var(--text-muted);">Options de réponses & Bonne réponse (pour QCM) :</label>`;
+                        if (!q.correctIndices) q.correctIndices = q.correctIndex !== undefined ? [q.correctIndex] : [];
+                        
+                        optionsHtml = `<div style="margin-top: 0.75rem;"><label style="font-size:0.9rem; color:var(--text-muted);">Propositions de réponse (cochez la ou les bonnes réponses pour le QCM) :</label>`;
+                        
                         (q.options || []).forEach((opt, oIdx) => {
-                            const isChecked = (q.correctIndex !== undefined && parseInt(q.correctIndex) === oIdx) ? "checked" : "";
+                            const isChecked = q.correctIndices.includes(oIdx) ? "checked" : "";
                             optionsHtml += `
                                 <div class="option-row">
-                                    <input type="radio" name="correct_${sIdx}_${qIdx}" ${isChecked} onclick="editableSessions[${sIdx}].questions[${qIdx}].correctIndex = ${oIdx}" title="Marquer comme bonne réponse">
+                                    <input type="checkbox" ${isChecked} onchange="toggleCorrectIndex(${sIdx}, ${qIdx}, ${oIdx}, this.checked)" title="Marquer comme bonne réponse">
                                     <input type="text" value="${opt}" oninput="editableSessions[${sIdx}].questions[${qIdx}].options[${oIdx}] = this.value" placeholder="Option ${oIdx+1}" style="margin-bottom:0;">
                                     <button onclick="removeOption(${sIdx}, ${qIdx}, ${oIdx})" style="background: #ef4444; padding: 0.5rem 0.8rem;">✕</button>
                                 </div>
                             `;
                         });
-                        optionsHtml += `<button onclick="addOption(${sIdx}, ${qIdx})" style="background: #475569; font-size: 0.8rem; margin-top:0.5rem;">+ Ajouter une option</button></div>`;
+                        optionsHtml += `<button onclick="addOption(${sIdx}, ${qIdx})" style="background: #475569; font-size: 0.8rem; margin-top:0.5rem;">+ Ajouter une proposition</button></div>`;
                     }
 
                     qDiv.innerHTML = `
                         <div style="display: flex; gap: 1rem; align-items: center;">
-                            <input type="text" value="${q.text}" oninput="editableSessions[${sIdx}].questions[${qIdx}].text = this.value" placeholder="Intitulé de la question" style="margin-bottom:0; flex-grow:1;">
-                            <select onchange="changeQuestionType(${sIdx}, ${qIdx}, this.value)" style="width: 180px; margin-bottom:0;">
-                                <option value="open" ${q.type==='open'?'selected':''}>Question ouverte</option>
+                            <input type="text" value="${q.text}" oninput="editableSessions[${sIdx}].questions[${qIdx}].text = this.value" placeholder="Énoncez votre question ici..." style="margin-bottom:0; flex-grow:1;">
+                            <select onchange="changeQuestionType(${sIdx}, ${qIdx}, this.value)" style="width: 190px; margin-bottom:0;">
+                                <option value="open" ${q.type==='open'?'selected':''}>Question ouverte (Post-its)</option>
                                 <option value="wordcloud" ${q.type==='wordcloud'?'selected':''}>Nuage de mots</option>
-                                <option value="mcq" ${q.type==='mcq'?'selected':''}>QCM</option>
-                                <option value="poll" ${q.type==='poll'?'selected':''}>Sondage</option>
+                                <option value="mcq" ${q.type==='mcq'?'selected':''}>QCM (Bonnes réponses)</option>
+                                <option value="poll" ${q.type==='poll'?'selected':''}>Sondage (Opinion)</option>
                             </select>
                             <button onclick="removeQuestion(${sIdx}, ${qIdx})" style="background: var(--danger); padding: 0.5rem 0.8rem;">🗑️</button>
                         </div>
@@ -729,10 +778,23 @@
             });
         }
 
+        function toggleCorrectIndex(sIdx, qIdx, oIdx, isChecked) {
+            if (!editableSessions[sIdx].questions[qIdx].correctIndices) {
+                editableSessions[sIdx].questions[qIdx].correctIndices = [];
+            }
+            if (isChecked) {
+                if (!editableSessions[sIdx].questions[qIdx].correctIndices.includes(oIdx)) {
+                    editableSessions[sIdx].questions[qIdx].correctIndices.push(oIdx);
+                }
+            } else {
+                editableSessions[sIdx].questions[qIdx].correctIndices = editableSessions[sIdx].questions[qIdx].correctIndices.filter(i => i !== oIdx);
+            }
+        }
+
         function addSession() {
             editableSessions.push({
                 id: "session_" + Date.now(),
-                title: "Nouvelle Session",
+                title: "Nouveau Cours / Nouvelle Session",
                 questions: [{ id: "q_" + Date.now(), type: "open", text: "Nouvelle question ?" }]
             });
             renderEditorForm();
@@ -743,7 +805,7 @@
                 editableSessions.splice(sIdx, 1);
                 renderEditorForm();
             } else {
-                alert("Il doit rester au moins une session.");
+                alert("Il faut conserver au moins une session !");
             }
         }
 
@@ -761,15 +823,15 @@
                 editableSessions[sIdx].questions.splice(qIdx, 1);
                 renderEditorForm();
             } else {
-                alert("Chaque session doit contenir au moins une question.");
+                alert("Une session doit posséder au minimum une question.");
             }
         }
 
         function changeQuestionType(sIdx, qIdx, newType) {
             editableSessions[sIdx].questions[qIdx].type = newType;
             if ((newType === 'mcq' || newType === 'poll') && !editableSessions[sIdx].questions[qIdx].options) {
-                editableSessions[sIdx].questions[qIdx].options = ["Option 1", "Option 2"];
-                editableSessions[sIdx].questions[qIdx].correctIndex = 0;
+                editableSessions[sIdx].questions[qIdx].options = ["Option A", "Option B"];
+                editableSessions[sIdx].questions[qIdx].correctIndices = [0];
             }
             renderEditorForm();
         }
@@ -783,9 +845,14 @@
         function removeOption(sIdx, qIdx, oIdx) {
             if(editableSessions[sIdx].questions[qIdx].options.length > 2) {
                 editableSessions[sIdx].questions[qIdx].options.splice(oIdx, 1);
+                if(editableSessions[sIdx].questions[qIdx].correctIndices) {
+                    editableSessions[sIdx].questions[qIdx].correctIndices = editableSessions[sIdx].questions[qIdx].correctIndices
+                        .filter(i => i !== oIdx)
+                        .map(i => i > oIdx ? i - 1 : i);
+                }
                 renderEditorForm();
             } else {
-                alert("Un QCM/Sondage doit comporter au moins 2 options.");
+                alert("Prévoyez au moins 2 propositions de réponse.");
             }
         }
 
@@ -799,7 +866,7 @@
         }
 
         function clearFirestoreDatabase() {
-            if (confirm("⚠️ Voulez-vous vraiment vider l'historique complet de toutes les réponses de la base ?")) {
+            if (confirm("⚠️ Souhaitez-vous réinitialiser toutes les réponses enregistrées dans la base globale ?")) {
                 const batch = db.batch();
                 sessionsData.forEach(session => {
                     session.questions.forEach(q => {
@@ -807,7 +874,7 @@
                     });
                 });
                 batch.commit().then(() => {
-                    alert("Base de données nettoyée avec succès !");
+                    alert("Base globale réinitialisée avec succès !");
                     closeEditor();
                     listenToAnswers();
                 });
