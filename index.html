@@ -205,7 +205,7 @@
             font-size: 1.2rem;
         }
 
-        /* Modal Editeur Simplifié */
+        /* Modal Editeur */
         #editor-modal {
             display: none;
             position: fixed;
@@ -221,17 +221,9 @@
             padding: 2rem;
             border-radius: 16px;
             width: 90%;
-            max-width: 750px;
-            max-height: 85vh;
+            max-width: 700px;
+            max-height: 80vh;
             overflow-y: auto;
-        }
-
-        .question-row {
-            background: #0f172a;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            border: 1px solid #334155;
         }
     </style>
 </head>
@@ -242,7 +234,7 @@
         <div class="header">
             <div class="title-area">
                 <h1>PEPS Interactions</h1>
-                <span id="session-title" style="color: var(--text-muted)">Session 1: Cours d'Achats</span>
+                <span id="session-title" style="color: var(--text-muted)">Session 1: Introduction aux Achats</span>
             </div>
             <div>
                 <span id="answers-count" style="font-weight: bold; font-size: 1.2rem; color: var(--success)">0 réponse(s)</span>
@@ -271,7 +263,7 @@
             <span id="q-number" style="align-self: center; font-weight: bold;">Question 1/1</span>
             <button onclick="nextQuestion()">Suivant ➡</button>
             <button onclick="resetAnswers()" style="background: #ef4444;">🔄 Réinitialiser</button>
-            <button onclick="openEditor()" style="background: #8b5cf6;">⚙️ Éditeur de Questions</button>
+            <button onclick="openEditor()" style="background: #8b5cf6;">⚙️ Éditeur de Sessions</button>
         </div>
     </div>
 
@@ -284,29 +276,22 @@
             </div>
             <div id="student-input-area"></div>
             <div id="student-feedback" style="display:none; color: var(--success); text-align: center; font-weight: bold; margin-top: 1rem;">
-                ✓ Réponse envoyée ! Vous pouvez en envoyer une autre.
+                ✓ Réponse envoyée !
             </div>
         </div>
     </div>
 
-    <!-- Modal Éditeur Visuel -->
+    <!-- Modal Éditeur -->
     <div id="editor-modal">
         <div class="modal-body">
-            <h2 style="margin-bottom: 0.5rem;">Gestionnaire de Questions</h2>
-            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Modifiez le titre de la session et vos questions ci-dessous :</p>
-            
-            <div style="margin-bottom: 1.5rem;">
-                <label style="font-size: 0.9rem; color: var(--text-muted);">Titre de la session :</label>
-                <input type="text" id="edit-session-title" style="margin-top: 0.5rem;">
-            </div>
-
-            <div id="questions-container"></div>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; border-top: 1px solid #334155; padding-top: 1rem;">
+            <h2 style="margin-bottom: 1rem;">Éditeur de Questions / Sessions</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">Modifiez vos questions ci-dessous :</p>
+            <textarea id="json-input" style="width: 100%; height: 300px; background: #0f172a; color: white; padding: 1rem; border-radius: 8px; font-family: monospace;"></textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
                 <button onclick="clearAllDatabase()" style="background: #dc2626;">🗑️ Tout effacer (base globale)</button>
                 <div style="display: flex; gap: 1rem;">
                     <button onclick="closeEditor()" style="background: #64748b;">Annuler</button>
-                    <button onclick="saveSessionVisual()">Enregistrer les modifications</button>
+                    <button onclick="saveSession()">Enregistrer la Session</button>
                 </div>
             </div>
         </div>
@@ -326,14 +311,14 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Vos vraies questions par défaut (Q1 et Q4 en ouvertes multi-réponses)
+        // Vos questions configurées (Q1 et Q4 en open = multi-réponses)
         let currentSession = {
-            title: "Session 1 : Cours d'Achats",
+            title: "Session 1 : Négociation & Achats",
             questions: [
-                { id: "q1", type: "open", text: "Première question ouverte (plusieurs réponses possibles)" },
-                { id: "q2", type: "mcq", text: "Exemple de QCM (choix unique)", options: ["Option A", "Option B", "Option C"] },
-                { id: "q3", type: "wordcloud", text: "Nuage de mots (plusieurs réponses possibles)" },
-                { id: "q4", type: "open", text: "Quatrième question ouverte (plusieurs réponses possibles)" }
+                { id: "q1", type: "open", text: "Quels sont vos premiers retours sur le cas pratique ?" },
+                { id: "q2", type: "mcq", text: "Quel est l'objectif principal du BATNA (MESORE) ?", options: ["Avoir un prix le plus bas", "Connaître sa meilleure solution de repli", "Mettre la pression sur le fournisseur", "Remplir une exigence ISO"] },
+                { id: "q3", type: "wordcloud", text: "En un mot, qu'évoque pour vous une négociation réussie ?" },
+                { id: "q4", type: "open", text: "Quels sont selon vous les freins majeurs à l'intégration des critères RSE dans les achats ?" }
             ]
         };
 
@@ -474,7 +459,7 @@
                 document.getElementById("student-feedback").style.display = "none";
 
                 if (q.type === "mcq" || q.type === "poll") {
-                    if (q.options) {
+                    if(q.options) {
                         q.options.forEach(opt => {
                             const btn = document.createElement("button");
                             btn.className = "opt-btn";
@@ -493,7 +478,7 @@
                     btn.style.width = "100%";
                     btn.innerText = "Envoyer";
                     
-                    // Toujours multi-réponses pour les questions ouvertes et nuages de mots
+                    // Multi-réponses autorisé pour open et wordcloud
                     btn.onclick = () => {
                         const val = document.getElementById("txt-answer").value.trim();
                         if (val) {
@@ -517,33 +502,13 @@
                 }
                 const feedback = document.getElementById("student-feedback");
                 feedback.style.display = "block";
-                setTimeout(() => { feedback.style.display = "none"; }, 2500);
+                setTimeout(() => { feedback.style.display = "none"; }, 2000);
             });
         }
 
-        // --- EDITEUR VISUEL ---
+        // --- EDITEUR ---
         function openEditor() {
-            document.getElementById("edit-session-title").value = currentSession.title;
-            const container = document.getElementById("questions-container");
-            container.innerHTML = "";
-
-            currentSession.questions.forEach((q, idx) => {
-                const row = document.createElement("div");
-                row.className = "question-row";
-                row.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span style="font-weight: bold; color: #38bdf8;">Question ${idx + 1}</span>
-                        <select id="q-type-${idx}" style="background: #1e293b; color: white; padding: 0.2rem; border-radius: 4px;">
-                            <option value="open" ${q.type === 'open' ? 'selected' : ''}>Question Ouverte (multi-réponses)</option>
-                            <option value="wordcloud" ${q.type === 'wordcloud' ? 'selected' : ''}>Nuage de Mots (multi-réponses)</option>
-                            <option value="mcq" ${q.type === 'mcq' ? 'selected' : ''}>QCM (mono-réponse)</option>
-                        </select>
-                    </div>
-                    <input type="text" id="q-text-${idx}" value="${q.text}" style="margin-bottom: 0;">
-                `;
-                container.appendChild(row);
-            });
-
+            document.getElementById("json-input").value = JSON.stringify(currentSession, null, 2);
             document.getElementById("editor-modal").style.display = "flex";
         }
 
@@ -551,19 +516,17 @@
             document.getElementById("editor-modal").style.display = "none";
         }
 
-        function saveSessionVisual() {
-            currentSession.title = document.getElementById("edit-session-title").value;
-            
-            currentSession.questions.forEach((q, idx) => {
-                q.text = document.getElementById(`q-text-${idx}`).value;
-                q.type = document.getElementById(`q-type-${idx}`).value;
-            });
-
-            currentQIndex = 0;
-            publishCurrentState();
-            listenToAnswers();
-            closeEditor();
-            alert("Questions mises à jour avec succès !");
+        function saveSession() {
+            try {
+                const parsed = JSON.parse(document.getElementById("json-input").value);
+                currentSession = parsed;
+                currentQIndex = 0;
+                publishCurrentState();
+                listenToAnswers();
+                closeEditor();
+            } catch (e) {
+                alert("Erreur de format JSON : " + e.message);
+            }
         }
 
         function clearAllDatabase() {
