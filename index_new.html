@@ -410,7 +410,7 @@
         // --- VUE ENSEIGNANTE ---
         function initTeacherView() {
             new QRCode(document.getElementById("qrcode"), {
-                text: window.location.origin + window.location.pathname + "?role=student",
+                text: window.location.origin + window.location.pathname.replace('app.html', 'index.html') + "?role=student",
                 width: 160,
                 height: 160
             });
@@ -784,7 +784,7 @@
             }
             if (isChecked) {
                 if (!editableSessions[sIdx].questions[qIdx].correctIndices.includes(oIdx)) {
-                    editableSessions[qIdx].correctIndices.push(oIdx);
+                    editableSessions[sIdx].questions[qIdx].correctIndices.push(oIdx);
                 }
             } else {
                 editableSessions[sIdx].questions[qIdx].correctIndices = editableSessions[sIdx].questions[qIdx].correctIndices.filter(i => i !== oIdx);
