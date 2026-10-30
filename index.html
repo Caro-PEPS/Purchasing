@@ -36,8 +36,8 @@ input[type=text],select{width:100%;padding:.7rem .8rem;border-radius:8px;border:
 .url{font-size:.75rem;color:var(--muted);word-break:break-all}
 .bar{position:fixed;bottom:.9rem;left:50%;transform:translateX(-50%);background:rgba(17,26,46,.96);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:14px;padding:.6rem .9rem;display:flex;gap:.5rem;align-items:center;z-index:10;flex-wrap:wrap;justify-content:center;max-width:96vw}
 .bar .sep{width:1px;height:24px;background:var(--line)}
-.cloud{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;align-items:center;padding:1rem}
-.cw{font-weight:700;padding:.3rem .8rem;border-radius:999px}
+.cloud{display:flex;flex-wrap:wrap;gap:.1rem 1.6rem;justify-content:center;align-items:center;padding:1rem;max-width:100%}
+.cw{font-weight:800;padding:0;border:0;background:none;line-height:1.05}
 .posts{width:100%;max-height:470px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1rem;padding:.6rem}
 .post{padding:1.1rem;border-radius:6px;font-size:1.05rem;color:#1e293b;font-weight:500;box-shadow:0 4px 8px rgba(0,0,0,.3);word-break:break-word;transform:rotate(var(--r,0deg))}
 .empty{color:var(--muted);font-size:1.1rem;text-align:center}
@@ -68,6 +68,7 @@ input[type=text],select{width:100%;padding:.7rem .8rem;border-radius:8px;border:
 .side{box-shadow:0 1px 3px rgba(15,23,42,.08)}
 #qrcode{border:1px solid var(--line)}
 .bar{background:rgba(255,255,255,.97);box-shadow:0 8px 24px rgba(15,23,42,.18)}
+.opt{color:var(--text)}
 .opt:hover{background:#e6eaf7}.opt.sel{background:#e0e7ff;border-color:var(--accent)}
 .fb{color:var(--ok)}
 .scard,.mbody{box-shadow:0 1px 3px rgba(15,23,42,.1)}
@@ -229,10 +230,16 @@ function render(){
   }else if(q.type==="wordcloud"){
     const div=document.createElement("div");div.className="cloud";
     const f={};resp.forEach(r=>{const w=String(r).trim().toLowerCase();if(w)f[w]=(f[w]||0)+1});
-    const ws=Object.keys(f);
+    const ws=Object.keys(f).sort((x,y)=>f[y]-f[x]);
     if(!ws.length)div.innerHTML='<p class="empty">Les mots apparaîtront ici en direct…</p>';
-    ws.forEach((w,i)=>{const s=document.createElement("span"),c=COLORS[i%COLORS.length];
-      s.className="cw";s.textContent=w;s.style.fontSize=Math.min(1.3+f[w]*.6,4)+"rem";s.style.color=c;s.style.background=c+"1f";s.style.border=`1px solid ${c}55`;div.appendChild(s)});
+    const mx=f[ws[0]]||1,top=ws.length<=6?5:ws.length<=15?3.8:2.8;
+    const h=w=>[...w].reduce((t,ch)=>t+ch.charCodeAt(0),0);
+    const ord=[];ws.forEach((w,i)=>i%2?ord.unshift(w):ord.push(w)); // les plus gros au centre
+    ord.forEach(w=>{const s=document.createElement("span"),c=COLORS[h(w)%COLORS.length];
+      const k=.75+.25*(h(w)%4)/3;
+      s.className="cw";s.textContent=w;s.style.fontSize=Math.max(1.3,(1.3+(top-1.3)*f[w]/mx)*k)+"rem";s.style.color=c;
+      if(h(w)%5===0)s.style.transform="rotate(-6deg)";
+      div.appendChild(s)});
     area.appendChild(div);
   }else{
     const div=document.createElement("div");div.className="posts";
