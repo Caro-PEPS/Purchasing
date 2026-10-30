@@ -10,7 +10,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
-:root{--bg:#0b1220;--panel:#111a2e;--panel2:#16213a;--line:#24324f;--text:#e8edf6;--muted:#8a99b5;--accent:#4f6df5;--accent2:#3b55d9;--ok:#16a34a;--warn:#d97706;--bad:#dc2626}
+:root{--bg:#f3f5fa;--panel:#ffffff;--panel2:#eef1f8;--line:#d9dfec;--text:#0f172a;--muted:#5b6785;--accent:#4338ca;--accent2:#3730a3;--ok:#15803d;--warn:#d97706;--bad:#dc2626}
 *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
 body{background:var(--bg);color:var(--text);min-height:100vh}
 button{background:var(--accent);color:#fff;border:0;padding:.55rem 1rem;border-radius:8px;font-weight:600;font-size:.9rem;cursor:pointer;transition:background .15s}
@@ -58,10 +58,25 @@ input[type=text],select{width:100%;padding:.7rem .8rem;border-radius:8px;border:
 .row input[type=checkbox]{width:20px;height:20px;flex:none;cursor:pointer}
 .lbl{font-size:.85rem;color:var(--muted);display:flex;gap:.4rem;align-items:center;margin-top:.7rem}
 @media(max-width:900px){.main{grid-template-columns:1fr}.qtext{font-size:1.5rem}}
+
+/* Thème professionnel clair */
+.top{background:#0f172a;border:0;color:#fff;box-shadow:0 2px 8px rgba(15,23,42,.18)}
+.top .brand span{color:#94a3b8}
+.top select,.top .count{background:#1e293b;border-color:#334155;color:#fff}
+.top button.ghost{color:#fff;border-color:#334155}.top button.ghost:hover{background:#1e293b}
+.stage{box-shadow:0 1px 3px rgba(15,23,42,.08);border-top:4px solid var(--accent)}
+.side{box-shadow:0 1px 3px rgba(15,23,42,.08)}
+#qrcode{border:1px solid var(--line)}
+.bar{background:rgba(255,255,255,.97);box-shadow:0 8px 24px rgba(15,23,42,.18)}
+.opt:hover{background:#e6eaf7}.opt.sel{background:#e0e7ff;border-color:var(--accent)}
+.fb{color:var(--ok)}
+.scard,.mbody{box-shadow:0 1px 3px rgba(15,23,42,.1)}
+.post{box-shadow:0 4px 8px rgba(15,23,42,.18)}
+input[type=text],select{background:#fff}
 </style>
 </head>
 <body>
- 
+
 <div id="teacher">
   <div class="top">
     <div class="brand">PEPS Interactions<span id="stitle"></span></div>
@@ -96,7 +111,7 @@ input[type=text],select{width:100%;padding:.7rem .8rem;border-radius:8px;border:
     <button onclick="openEditor()">⚙ Éditeur</button>
   </div>
 </div>
- 
+
 <div id="student">
   <h2 style="text-align:center;margin-top:.8rem">PEPS Interactions</h2>
   <div class="scard">
@@ -105,7 +120,7 @@ input[type=text],select{width:100%;padding:.7rem .8rem;border-radius:8px;border:
     <div class="fb" id="sfb">Réponse envoyée, merci !</div>
   </div>
 </div>
- 
+
 <div id="modal"><div class="mbody">
   <h2>Éditeur de sessions</h2>
   <p style="color:var(--muted);margin:.4rem 0 1.2rem">Créez vos questions, dupliquez une session pour l'autre groupe (les réponses restent séparées), puis enregistrez.</p>
@@ -116,37 +131,37 @@ input[type=text],select{width:100%;padding:.7rem .8rem;border-radius:8px;border:
     <div style="display:flex;gap:.6rem"><button class="ghost" onclick="closeEditor()">Annuler</button><button class="ok" onclick="saveAll()">Enregistrer</button></div>
   </div>
 </div></div>
- 
+
 <script>
 // ⚠️ Changez ce code d'accès enseignante
 const TEACHER_PIN = "peps2025";
- 
+
 firebase.initializeApp({
   apiKey:"AIzaSyDter1HkLbMMIw5SZT-c6iiG_LcSMkciC8",authDomain:"peps-interactions.firebaseapp.com",
   projectId:"peps-interactions",storageBucket:"peps-interactions.firebasestorage.app",
   messagingSenderId:"195505715234",appId:"1:195505715234:web:f2245e3b0f4603788a327b"});
 const db=firebase.firestore();
- 
+
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const clone=o=>JSON.parse(JSON.stringify(o));
-const COLORS=['#38bdf8','#a78bfa','#34d399','#f472b6','#fbbf24','#fb7185','#2dd4bf','#818cf8'];
+const COLORS=['#4f46e5','#0891b2','#059669','#db2777','#d97706','#7c3aed','#0d9488','#e11d48'];
 const POSTS=['#fef08a','#bbf7d0','#bae6fd','#fed7aa','#e9d5ff','#fbcfe8'];
- 
+
 let sessions=[{id:"session_1",title:"Session 1 – Groupe A",questions:[
   {id:"q1",type:"open",text:"Quels sont vos premiers retours sur le cas pratique ?"},
   {id:"q2",type:"mcq",multiple:true,text:"Quels sont les objectifs clés de la MESORE (BATNA) ?",options:["Obtenir le prix le plus bas possible","Identifier sa meilleure alternative de repli","Instaurer un climat d'échange constructif","Éviter d'accepter un accord défavorable"],correctIndices:[1,3]},
   {id:"q3",type:"wordcloud",text:"En un mot, qu'évoque pour vous une négociation réussie ?"},
   {id:"q4",type:"poll",text:"Quel canal privilégiez-vous pour vos briefs fournisseurs ?",options:["Email formel","Appel téléphonique","Réunion en présentiel","Atelier collaboratif"]}]}];
 let sIdx=0,qIdx=0,reveal=false,chart=null,unsub=null,editable=[];
- 
+
 const role=new URLSearchParams(location.search).get("role");
 if(role==="teacher"){
   if(sessionStorage.pepsOk==="1"||prompt("Code d'accès enseignante :")===TEACHER_PIN){
     sessionStorage.pepsOk="1";initTeacher();
   } else document.body.innerHTML="<p style='padding:2rem'>Accès refusé.</p>";
 }else initStudent();
- 
+
 /* ========== ENSEIGNANTE ========== */
 function initTeacher(){
   document.getElementById("teacher").style.display="flex";
@@ -163,7 +178,7 @@ function initTeacher(){
   }).catch(()=>publish());
 }
 const curQ=()=>sessions[sIdx].questions[qIdx];
- 
+
 function pubQ(q){ // version « élève » : sans les bonnes réponses
   const o={id:q.id,type:q.type,text:q.text,multiple:!!q.multiple};
   if(q.options)o.options=q.options;
@@ -194,7 +209,7 @@ function listen(){
 }
 function toggleReveal(){reveal=!reveal;document.getElementById("revealBtn").textContent=reveal?"Masquer la correction":"✔ Correction";render()}
 const val=r=>(r&&typeof r==="object"&&"v" in r)?r.v:r;
- 
+
 function render(){
   const q=curQ(),resp=(window._resp||[]).map(val),area=document.getElementById("display");
   document.getElementById("count").textContent=`${resp.length} participation${resp.length>1?"s":""}`;
@@ -206,10 +221,10 @@ function render(){
     const opts=q.options||[],counts=opts.map(()=>0);
     resp.forEach(r=>(Array.isArray(r)?r:[r]).forEach(v=>{const i=opts.indexOf(v);if(i>=0)counts[i]++}));
     const ok=q.correctIndices||[];
-    const bg=opts.map((_,i)=>(q.type==="mcq"&&reveal)?(ok.includes(i)?"#16a34a":"#334155"):COLORS[i%COLORS.length]);
+    const bg=opts.map((_,i)=>(q.type==="mcq"&&reveal)?(ok.includes(i)?"#16a34a":"#cbd5e1"):COLORS[i%COLORS.length]);
     chart=new Chart(cv,{type:"bar",data:{labels:opts,datasets:[{data:counts,backgroundColor:bg,borderRadius:6}]},
       options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,animation:{duration:300},
-        scales:{x:{beginAtZero:true,ticks:{stepSize:1,color:"#8a99b5"},grid:{color:"#24324f"}},y:{ticks:{color:"#e8edf6",font:{size:15}},grid:{display:false}}},
+        scales:{x:{beginAtZero:true,ticks:{stepSize:1,color:"#5b6785"},grid:{color:"#e2e8f0"}},y:{ticks:{color:"#0f172a",font:{size:15}},grid:{display:false}}},
         plugins:{legend:{display:false}}}});
   }else if(q.type==="wordcloud"){
     const div=document.createElement("div");div.className="cloud";
@@ -238,10 +253,10 @@ function resetQ(){if(confirm("Vider les réponses de cette question ?"))db.colle
 function wipe(list){const b=db.batch();list.forEach(q=>b.set(db.collection("answers").doc(q.id),{responses:[]}));return b.commit()}
 function resetSession(){if(confirm(`Vider TOUTES les réponses de « ${sessions[sIdx].title} » ?`))wipe(sessions[sIdx].questions)}
 function shot(){
-  html2canvas(document.getElementById("capture"),{backgroundColor:"#111a2e"}).then(c=>{
+  html2canvas(document.getElementById("capture"),{backgroundColor:"#ffffff"}).then(c=>{
     const a=document.createElement("a");a.download=`peps-${sessions[sIdx].title.replace(/\W+/g,"_")}-Q${qIdx+1}.png`;a.href=c.toDataURL();a.click()});
 }
- 
+
 /* ========== ÉDITEUR ========== */
 function openEditor(){editable=clone(sessions);drawEditor();document.getElementById("modal").style.display="flex"}
 function closeEditor(){document.getElementById("modal").style.display="none"}
@@ -294,7 +309,7 @@ function clearAll(){
   if(!confirm("Vider les réponses de TOUTES les sessions ?"))return;
   wipe(editable.flatMap(s=>s.questions)).then(()=>alert("Toutes les réponses ont été effacées."));
 }
- 
+
 /* ========== ÉTUDIANTS ========== */
 let lastQ=null;const done=new Set();
 function initStudent(){
@@ -337,4 +352,3 @@ function send(qId,v){
 </script>
 </body>
 </html>
- 
