@@ -4,11 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PEPS Interactions</title>
+<!-- © Caro-PEPS – PEPS Interactions. Tous droits réservés. Reproduction interdite sans autorisation. -->
+<meta name="author" content="Caro-PEPS">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f3f5fa;--panel:#ffffff;--panel2:#eef1f8;--line:#d9dfec;--text:#0f172a;--muted:#5b6785;--accent:#4338ca;--accent2:#3730a3;--ok:#15803d;--warn:#d97706;--bad:#dc2626}
@@ -20,7 +23,7 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--tex
 button.ghost:hover{background:var(--panel2)}
 button.ok{background:var(--ok)}button.warn{background:var(--warn)}button.bad{background:var(--bad)}
 :focus-visible{outline:2px solid #93a5ff;outline-offset:2px}
-input[type=text],select{width:100%;padding:.7rem .8rem;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:1rem}
+input[type=password],input[type=text],select{width:100%;padding:.7rem .8rem;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:1rem}
 #teacher{display:none;min-height:100vh;padding:1rem 1.5rem 5.5rem;flex-direction:column;gap:1rem}
 .top{display:flex;justify-content:space-between;align-items:center;gap:1rem;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:.8rem 1.2rem;flex-wrap:wrap}
 .brand{font-weight:700;font-size:1.15rem}.brand span{color:var(--muted);font-weight:500;font-size:.9rem;margin-left:.6rem}
@@ -119,6 +122,16 @@ button:disabled{opacity:.45;cursor:not-allowed}
 </head>
 <body>
 
+<div id="login" style="display:none;position:fixed;inset:0;background:var(--bg);align-items:center;justify-content:center;z-index:2000">
+  <div class="scard" style="width:min(380px,92vw)">
+    <h2 style="color:var(--ink);margin-bottom:1rem;font-size:1.2rem">Espace enseignante</h2>
+    <input type="text" id="lemail" placeholder="Adresse e-mail" autocomplete="username" style="margin-bottom:.7rem">
+    <input type="password" id="lpass" placeholder="Mot de passe" autocomplete="current-password" style="margin-bottom:.7rem" onkeydown="if(event.key==='Enter')doLogin()">
+    <button style="width:100%;padding:.8rem" onclick="doLogin()">Se connecter</button>
+    <div class="gerr" id="lerr"></div>
+  </div>
+</div>
+
 <div id="teacher">
   <div class="top">
     <div class="brand">PEPS Interactions<span id="stitle"></span></div>
@@ -126,6 +139,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
     <div style="display:flex;gap:.7rem;align-items:center">
       <span class="count" id="count">0 participation</span>
       <button class="ghost" onclick="shot()">📸 Capturer</button>
+      <button class="ghost" onclick="auth.signOut().then(()=>location.reload())">Déconnexion</button>
     </div>
   </div>
   <div class="main">
@@ -189,8 +203,6 @@ button:disabled{opacity:.45;cursor:not-allowed}
 </div></div>
 
 <script>
-// ⚠️ Changez ce code d'accès enseignante
-const TEACHER_PIN = "peps2025";
 
 firebase.initializeApp({
   apiKey:"AIzaSyDter1HkLbMMIw5SZT-c6iiG_LcSMkciC8",authDomain:"peps-interactions.firebaseapp.com",
@@ -213,11 +225,18 @@ let sessions=[{id:"session_1",title:"Session 1 – Groupe A",questions:[
 let sIdx=0,qIdx=0,reveal=false,chart=null,unsub=null,editable=[];
 
 const role=new URLSearchParams(location.search).get("role");
+const auth=firebase.auth();let started=false;
 if(role==="teacher"){
-  if(sessionStorage.pepsOk==="1"||prompt("Code d'accès enseignante :")===TEACHER_PIN){
-    sessionStorage.pepsOk="1";initTeacher();
-  } else document.body.innerHTML="<p style='padding:2rem'>Accès refusé.</p>";
+  auth.onAuthStateChanged(u=>{
+    document.getElementById("login").style.display=u?"none":"flex";
+    if(u&&!started){started=true;initTeacher()}
+  });
 }else initStudent();
+function doLogin(){
+  const e=document.getElementById("lemail").value.trim(),p=document.getElementById("lpass").value;
+  document.getElementById("lerr").textContent="";
+  auth.signInWithEmailAndPassword(e,p).catch(()=>{document.getElementById("lerr").textContent="E-mail ou mot de passe incorrect."});
+}
 
 /* ========== ENSEIGNANTE ========== */
 function initTeacher(){
