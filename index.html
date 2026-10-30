@@ -107,6 +107,14 @@ button{border-radius:6px;font-weight:600;letter-spacing:.01em}
 .mbody{border-radius:12px}.mbody h2{color:var(--ink)}
 .sb{background:var(--panel2)}.qb{background:#fff}
 :focus-visible{outline-color:var(--accent)}
+
+.codebox{width:100%;background:var(--ink);color:#fff;border-radius:8px;padding:.8rem .5rem}
+.clabel{font-size:.8rem;color:#9fb3c8}
+#codeVal{font-size:2.3rem;font-weight:700;letter-spacing:.22em;color:var(--gold);font-family:ui-monospace,Menlo,Consolas,monospace;padding-left:.22em}
+#codeSt{font-size:.8rem;color:#9fb3c8}
+#gcode{text-align:center;font-size:1.6rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;font-family:ui-monospace,Menlo,Consolas,monospace}
+.gerr{color:var(--bad);text-align:center;font-weight:600;margin-top:.8rem;min-height:1.2rem}
+button:disabled{opacity:.45;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -127,6 +135,7 @@ button{border-radius:6px;font-weight:600;letter-spacing:.01em}
       <div id="display"></div>
     </div>
     <div class="side">
+      <div class="codebox"><div class="clabel">Code de session</div><div id="codeVal">—</div><div id="codeSt"></div></div>
       <h3>Rejoignez l'interaction</h3>
       <p style="font-size:.85rem;color:var(--muted)">Scannez le QR code avec votre téléphone</p>
       <div id="qrcode"></div>
@@ -142,13 +151,26 @@ button{border-radius:6px;font-weight:600;letter-spacing:.01em}
     <button class="warn" onclick="resetQ()">Vider la question</button>
     <button class="bad" onclick="resetSession()">Vider la session</button>
     <span class="sep"></span>
+    <button onclick="genCode()">🔑 Générer un code</button>
+    <button class="bad" id="closeBtn" onclick="closeSession()">Clore la session</button>
+    <span class="sep"></span>
     <button onclick="openEditor()">⚙ Éditeur</button>
   </div>
 </div>
 
 <div id="student">
   <h2 style="text-align:center;margin-top:.8rem">PEPS Interactions</h2>
-  <div class="scard">
+  <div class="scard" id="gate">
+    <div style="font-size:1.2rem;font-weight:700;text-align:center;color:var(--ink);margin-bottom:1rem" id="gtitle">Rejoindre la session</div>
+    <div id="gform">
+      <p style="text-align:center;color:var(--muted);margin-bottom:1rem">Saisissez le code affiché par votre enseignante.</p>
+      <input type="text" id="gcode" maxlength="8" autocomplete="off" autocapitalize="characters" placeholder="CODE" onkeydown="if(event.key==='Enter')joinCode()">
+      <button style="width:100%;padding:.9rem;font-size:1.05rem;margin-top:.5rem" onclick="joinCode()">Rejoindre</button>
+      <div class="gerr" id="gerr"></div>
+    </div>
+    <p id="gclosed" style="display:none;text-align:center;color:var(--muted)">Aucune session n'est ouverte pour le moment. Cette page se mettra à jour dès que votre enseignante ouvrira la session.</p>
+  </div>
+  <div class="scard" id="scard" style="display:none">
     <div id="sq" style="font-size:1.25rem;font-weight:700;text-align:center;margin-bottom:1rem">En attente de la prochaine question…</div>
     <div id="sin"></div>
     <div class="fb" id="sfb">Réponse envoyée, merci !</div>
@@ -219,11 +241,30 @@ function pubQ(q){ // version « élève » : sans les bonnes réponses
   if(q.options)o.options=q.options;
   return o;
 }
+function pushActive(){
+  const S=sessions[sIdx],on=!!(S.open&&S.codeHash);
+  db.collection("state").doc("active").set({sIdx,qIdx,question:pubQ(curQ()),open:on,codeHash:S.codeHash||""});
+  document.getElementById("codeVal").textContent=on?S.code:"—";
+  document.getElementById("codeSt").textContent=on?"Session ouverte":"Session fermée";
+  document.getElementById("closeBtn").disabled=!on;
+}
+async function sha(t){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+async function genCode(){
+  const S=sessions[sIdx];
+  if(S.open&&!confirm("Un code est déjà actif. En générer un nouveau déconnectera les étudiants. Continuer ?"))return;
+  const A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789",r=crypto.getRandomValues(new Uint8Array(6));
+  S.code=[...r].map(x=>A[x%A.length]).join("");S.codeHash=await sha(S.code);S.open=true;
+  await saveConfig();pushActive();
+}
+function closeSession(){
+  if(!confirm("Clore la session ? Les étudiants seront déconnectés et ne pourront plus répondre."))return;
+  sessions[sIdx].open=false;saveConfig();pushActive();
+}
 function saveConfig(){return db.collection("state").doc("config").set({sessions:clone(sessions)})}
 function publish(){
   reveal=false;
   const q=curQ();
-  db.collection("state").doc("active").set({sIdx,qIdx,question:pubQ(q)});
+  pushActive();
   const sel=document.getElementById("ssel");
   sel.innerHTML=sessions.map((s,i)=>`<option value="${i}" ${i===sIdx?"selected":""}>${esc(s.title)}</option>`).join("");
   document.getElementById("stitle").textContent=`Question ${qIdx+1}/${sessions[sIdx].questions.length}`;
@@ -355,7 +396,7 @@ function delQ(s,q){if(editable[s].questions.length<=1)return alert("Une session 
 function addSession(){editable.push({id:"session_"+uid(),title:"Nouvelle session",questions:[{id:"q_"+uid(),type:"open",text:"Nouvelle question ?"}]});drawEditor()}
 function dupSession(i){ // nouveaux ID → réponses du groupe 2 séparées de celles du groupe 1
   const s=clone(editable[i]);s.id="session_"+uid();s.title+=" (copie)";
-  s.questions.forEach(q=>q.id="q_"+uid());editable.splice(i+1,0,s);drawEditor()}
+  s.questions.forEach(q=>q.id="q_"+uid());delete s.code;delete s.codeHash;delete s.open;editable.splice(i+1,0,s);drawEditor()}
 function delSession(i){if(editable.length<=1)return alert("Gardez au moins une session.");if(confirm("Supprimer cette session ?")){editable.splice(i,1);drawEditor()}}
 function saveAll(){
   sessions=clone(editable);sIdx=Math.min(sIdx,sessions.length-1);qIdx=0;
@@ -368,11 +409,28 @@ function clearAll(){
 
 /* ========== ÉTUDIANTS ========== */
 let lastQ=null;const done=new Set();
+let act=null,joined=sessionStorage.pepsJoin||"";
 function initStudent(){
   document.getElementById("student").style.display="block";
-  db.collection("state").doc("active").onSnapshot(d=>{
-    if(!d.exists)return;
-    const q=d.data().question;if(!q||q.id===lastQ)return;lastQ=q.id;
+  db.collection("state").doc("active").onSnapshot(d=>{act=d.exists?d.data():null;gate()});
+}
+function gate(){
+  const g=document.getElementById("gate"),c=document.getElementById("scard");
+  const open=!!(act&&act.open&&act.codeHash);
+  if(open&&joined===act.codeHash){g.style.display="none";c.style.display="block";showQ(act.question);return}
+  c.style.display="none";g.style.display="block";lastQ=null;
+  document.getElementById("gform").style.display=open?"block":"none";
+  document.getElementById("gclosed").style.display=open?"none":"block";
+}
+async function joinCode(){
+  const v=document.getElementById("gcode").value.trim().toUpperCase();
+  if(!v||!act||!act.open)return;
+  const h=await sha(v);
+  if(h===act.codeHash){joined=h;sessionStorage.pepsJoin=h;document.getElementById("gerr").textContent="";gate()}
+  else document.getElementById("gerr").textContent="Code incorrect. Vérifiez et réessayez.";
+}
+function showQ(q){
+    if(!q||q.id===lastQ)return;lastQ=q.id;
     document.getElementById("sq").textContent=q.text;
     document.getElementById("sfb").style.display="none";
     const area=document.getElementById("sin");area.innerHTML="";
@@ -398,7 +456,6 @@ function initStudent(){
       i.onkeydown=e=>{if(e.key==="Enter")b.click()};
       area.appendChild(i);area.appendChild(b);
     }
-  });
 }
 function send(qId,v){
   // objet avec identifiant unique : évite que deux réponses identiques soient fusionnées par Firestore
