@@ -1,885 +1,340 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PEPS Interactions - Amphi & Cours</title>
-    <!-- Chart.js, QRCode.js & html2canvas -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <style>
-        :root {
-            --bg-dark: #0f172a;
-            --panel-bg: #1e293b;
-            --accent: #2563eb;
-            --accent-hover: #1d4ed8;
-            --text-light: #f8fafc;
-            --text-muted: #94a3b8;
-            --success: #10b981;
-            --danger: #ef4444;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-light);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Mode Projection (Enseignante) */
-        #teacher-view {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            padding: 1.5rem;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            background: var(--panel-bg);
-            padding: 1rem 2rem;
-            border-radius: 12px;
-        }
-
-        .title-area h1 {
-            font-size: 1.5rem;
-            color: #38bdf8;
-        }
-
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 320px;
-            gap: 1.5rem;
-            flex-grow: 1;
-            overflow: hidden;
-        }
-
-        .display-card {
-            background: var(--panel-bg);
-            border-radius: 16px;
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            overflow-y: auto;
-        }
-
-        .question-text {
-            font-size: 1.8rem;
-            font-weight: 700;
-            text-align: center;
-            margin-bottom: 1.5rem;
-            color: var(--text-light);
-        }
-
-        .sidebar {
-            background: var(--panel-bg);
-            border-radius: 16px;
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        #qrcode {
-            background: white;
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 1rem;
-        }
-
-        /* Controls */
-        .controls {
-            position: fixed;
-            bottom: 1rem;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(8px);
-            padding: 0.75rem 1.5rem;
-            border-radius: 40px;
-            display: flex;
-            gap: 0.75rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 10;
-            align-items: center;
-        }
-
-        button {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 0.6rem 1.2rem;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
-        }
-
-        button:hover {
-            background: var(--accent-hover);
-        }
-
-        button:active {
-            transform: scale(0.98);
-        }
-
-        /* Mode Etudiant */
-        #student-view {
-            display: none;
-            padding: 1.5rem;
-            max-width: 600px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        .student-card {
-            background: var(--panel-bg);
-            padding: 1.5rem;
-            border-radius: 16px;
-            margin-top: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
-        }
-
-        .opt-btn {
-            width: 100%;
-            text-align: left;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            background: #334155;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            transition: background 0.2s;
-            color: white;
-            border: 2px solid transparent;
-            cursor: pointer;
-        }
-
-        .opt-btn:hover {
-            background: #475569;
-        }
-
-        .opt-btn.selected {
-            background: #1e3a8a;
-            border-color: #38bdf8;
-        }
-
-        input[type="text"], select, textarea {
-            width: 100%;
-            padding: 0.8rem;
-            border-radius: 8px;
-            border: 1px solid #475569;
-            background: #0f172a;
-            color: white;
-            font-size: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        /* Nuage de mots */
-        .cloud-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            padding: 1rem;
-        }
-
-        .cloud-word {
-            font-weight: bold;
-            padding: 0.3rem 0.6rem;
-            border-radius: 6px;
-            transition: transform 0.3s ease;
-        }
-        .cloud-word:hover {
-            transform: scale(1.1);
-        }
-
-        /* Post-its Question Ouverte */
-        .posts-container {
-            width: 100%;
-            max-height: 450px;
-            overflow-y: auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 1rem;
-            padding: 0.5rem;
-        }
-
-        .post-it {
-            padding: 1.2rem;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            color: #1e293b;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            word-break: break-word;
-            font-weight: 500;
-            position: relative;
-            transform: rotate(var(--rot, 0deg));
-        }
-
-        /* Modal Éditeur Avancé */
-        #editor-modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            backdrop-filter: blur(4px);
-        }
-
-        .modal-body {
-            background: var(--panel-bg);
-            padding: 2rem;
-            border-radius: 16px;
-            width: 95%;
-            max-width: 900px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
-        }
-
-        .session-block {
-            background: #0f172a;
-            border: 1px solid #334155;
-            padding: 1.2rem;
-            border-radius: 10px;
-            margin-bottom: 1.5rem;
-        }
-
-        .question-block {
-            background: #1e293b;
-            border: 1px solid #475569;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-top: 1rem;
-        }
-
-        .option-row {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 0.5rem;
-            align-items: center;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PEPS Interactions</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+:root{--bg:#0b1220;--panel:#111a2e;--panel2:#16213a;--line:#24324f;--text:#e8edf6;--muted:#8a99b5;--accent:#4f6df5;--accent2:#3b55d9;--ok:#16a34a;--warn:#d97706;--bad:#dc2626}
+*{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+body{background:var(--bg);color:var(--text);min-height:100vh}
+button{background:var(--accent);color:#fff;border:0;padding:.55rem 1rem;border-radius:8px;font-weight:600;font-size:.9rem;cursor:pointer;transition:background .15s}
+button:hover{background:var(--accent2)}
+button.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+button.ghost:hover{background:var(--panel2)}
+button.ok{background:var(--ok)}button.warn{background:var(--warn)}button.bad{background:var(--bad)}
+:focus-visible{outline:2px solid #93a5ff;outline-offset:2px}
+input[type=text],select{width:100%;padding:.7rem .8rem;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:1rem}
+#teacher{display:none;min-height:100vh;padding:1rem 1.5rem 5.5rem;flex-direction:column;gap:1rem}
+.top{display:flex;justify-content:space-between;align-items:center;gap:1rem;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:.8rem 1.2rem;flex-wrap:wrap}
+.brand{font-weight:700;font-size:1.15rem}.brand span{color:var(--muted);font-weight:500;font-size:.9rem;margin-left:.6rem}
+.top select{width:auto;max-width:380px;padding:.5rem}
+.count{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:.35rem .9rem;font-weight:600;font-size:.9rem}
+.main{display:grid;grid-template-columns:1fr 280px;gap:1rem;flex:1;min-height:0}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:2rem;display:flex;flex-direction:column;min-height:480px}
+.qtext{font-size:1.9rem;font-weight:700;text-align:center;margin-bottom:.4rem;line-height:1.3}
+.qhint{text-align:center;color:var(--muted);margin-bottom:1.2rem;font-size:.95rem;min-height:1.2rem}
+#display{flex:1;display:flex;justify-content:center;align-items:center;width:100%}
+.chartbox{position:relative;width:100%;height:380px}
+.side{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1.4rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.8rem}
+#qrcode{background:#fff;padding:12px;border-radius:8px}
+.url{font-size:.75rem;color:var(--muted);word-break:break-all}
+.bar{position:fixed;bottom:.9rem;left:50%;transform:translateX(-50%);background:rgba(17,26,46,.96);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:14px;padding:.6rem .9rem;display:flex;gap:.5rem;align-items:center;z-index:10;flex-wrap:wrap;justify-content:center;max-width:96vw}
+.bar .sep{width:1px;height:24px;background:var(--line)}
+.cloud{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;align-items:center;padding:1rem}
+.cw{font-weight:700;padding:.3rem .8rem;border-radius:999px}
+.posts{width:100%;max-height:470px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1rem;padding:.6rem}
+.post{padding:1.1rem;border-radius:6px;font-size:1.05rem;color:#1e293b;font-weight:500;box-shadow:0 4px 8px rgba(0,0,0,.3);word-break:break-word;transform:rotate(var(--r,0deg))}
+.empty{color:var(--muted);font-size:1.1rem;text-align:center}
+#student{display:none;max-width:560px;margin:0 auto;padding:1.2rem}
+.scard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.4rem;margin-top:1rem}
+.opt{display:flex;gap:.7rem;align-items:center;width:100%;text-align:left;padding:.9rem 1rem;margin-bottom:.6rem;background:var(--panel2);border:2px solid var(--line);border-radius:10px;font-size:1.05rem;font-weight:500}
+.opt:hover{background:#1d2b4a}
+.opt .box{flex:none;width:22px;height:22px;border:2px solid var(--muted);display:grid;place-items:center;font-size:.8rem}
+.opt.sel{border-color:var(--accent);background:#1b2a5c}
+.opt.sel .box{background:var(--accent);border-color:var(--accent)}
+.opt.sel .box::after{content:"✓"}
+.fb{display:none;color:#4ade80;text-align:center;font-weight:600;margin-top:1rem}
+#modal{display:none;position:fixed;inset:0;background:rgba(3,7,18,.8);justify-content:center;align-items:center;z-index:1000}
+.mbody{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem;width:96%;max-width:920px;max-height:92vh;overflow-y:auto}
+.sb{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:1rem;margin-bottom:1.2rem}
+.qb{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.9rem;margin-top:.8rem}
+.row{display:flex;gap:.5rem;align-items:center;margin-top:.5rem}
+.row input[type=checkbox]{width:20px;height:20px;flex:none;cursor:pointer}
+.lbl{font-size:.85rem;color:var(--muted);display:flex;gap:.4rem;align-items:center;margin-top:.7rem}
+@media(max-width:900px){.main{grid-template-columns:1fr}.qtext{font-size:1.5rem}}
+</style>
 </head>
 <body>
-
-    <!-- VUE ENSEIGNANTE -->
-    <div id="teacher-view">
-        <div class="header">
-            <div class="title-area">
-                <h1>PEPS Interactions</h1>
-                <span id="session-title" style="color: var(--text-muted)">Chargement de la session...</span>
-            </div>
-            <div style="display: flex; gap: 1.5rem; align-items: center;">
-                <span id="answers-count" style="font-weight: bold; font-size: 1.2rem; color: var(--success)">0 réponse(s)</span>
-                <button onclick="takeScreenshot()" style="background: #0d9488;">📸 Capturer l'écran</button>
-            </div>
-        </div>
-
-        <div class="main-content">
-            <div class="display-card" id="capture-area">
-                <div id="q-text" class="question-text">Chargement de la question...</div>
-                <div id="display-area" style="width: 100%; display: flex; justify-content: center; align-items: center; flex-grow: 1;"></div>
-            </div>
-
-            <div class="sidebar">
-                <div style="text-align: center;">
-                    <h3 style="color: #38bdf8;">⚡ À vous de jouer !</h3>
-                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.5rem;">Scannez le QR code pour rejoindre l'interaction :</p>
-                    <div id="qrcode"></div>
-                </div>
-                <div style="font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-top: 1rem;">
-                    Accès direct depuis smartphone & tablette
-                </div>
-            </div>
-        </div>
-
-        <div class="controls">
-            <button onclick="prevQuestion()">⬅ Précédente</button>
-            <span id="q-number" style="font-weight: bold; min-width: 90px; text-align: center;">Q 1/1</span>
-            <button onclick="nextQuestion()">Suivante ➡</button>
-            <button onclick="resetCurrentAnswers()" style="background: #f59e0b;" title="Effacer les réponses de cette question">🔄 Reset Question</button>
-            <button onclick="resetAllSessionAnswers()" style="background: var(--danger);" title="Effacer toutes les réponses de la session">🗑️ Reset Session</button>
-            <button onclick="openEditor()" style="background: #8b5cf6;">⚙️ Éditeur de Sessions</button>
-        </div>
+ 
+<div id="teacher">
+  <div class="top">
+    <div class="brand">PEPS Interactions<span id="stitle"></span></div>
+    <select id="ssel" onchange="goTo(+this.value,0)" aria-label="Choisir la session"></select>
+    <div style="display:flex;gap:.7rem;align-items:center">
+      <span class="count" id="count">0 participation</span>
+      <button class="ghost" onclick="shot()">📸 Capturer</button>
     </div>
-
-    <!-- VUE ÉTUDIANT -->
-    <div id="student-view">
-        <h2 style="text-align: center; color: #38bdf8; margin-top: 1rem;">✨ PEPS Interactions</h2>
-        <div class="student-card">
-            <div id="student-q-text" style="font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem; text-align: center; color: #f8fafc;">
-                Soyez prêt(e)s !<br><span style="font-size: 1rem; font-weight: normal; color: var(--text-muted);">Votre enseignante va bientôt afficher la question... 🚀</span>
-            </div>
-            <div id="student-input-area"></div>
-            <div id="student-feedback" style="display:none; color: var(--success); text-align: center; font-weight: bold; margin-top: 1rem; font-size: 1.1rem;">
-                🎉 Bien reçu ! Votre réponse a été envoyée avec succès !
-            </div>
-        </div>
+  </div>
+  <div class="main">
+    <div class="stage" id="capture">
+      <div class="qtext" id="qtext">Chargement…</div>
+      <div class="qhint" id="qhint"></div>
+      <div id="display"></div>
     </div>
-
-    <!-- MODAL ÉDITEUR DE SESSIONS -->
-    <div id="editor-modal">
-        <div class="modal-body">
-            <h2 style="margin-bottom: 0.5rem; color: #38bdf8;">⚙️ Éditeur de Sessions & Questions</h2>
-            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Configurez vos cours, choisissez le type d'interaction et cochez <b>une ou plusieurs bonnes réponses</b> pour vos QCM.</p>
-            
-            <div id="sessions-editor-container"></div>
-
-            <div style="display: flex; gap: 1rem; margin-top: 1rem; margin-bottom: 2rem;">
-                <button onclick="addSession()" style="background: #059669;">➕ Ajouter une nouvelle Session</button>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #334155; padding-top: 1.5rem;">
-                <button onclick="clearFirestoreDatabase()" style="background: var(--danger);">🗑️ Réinitialiser toute la base globale</button>
-                <div style="display: flex; gap: 1rem;">
-                    <button onclick="closeEditor()" style="background: #64748b;">Annuler</button>
-                    <button onclick="saveAllSessions()" style="background: #10b981;">Enregistrer & Valider</button>
-                </div>
-            </div>
-        </div>
+    <div class="side">
+      <h3>Rejoignez l'interaction</h3>
+      <p style="font-size:.85rem;color:var(--muted)">Scannez le QR code avec votre téléphone</p>
+      <div id="qrcode"></div>
+      <div class="url" id="url"></div>
     </div>
-
-    <script>
-        // Configuration Firebase
-        const firebaseConfig = {
-          apiKey: "AIzaSyDter1HkLbMMIw5SZT-c6iiG_LcSMkciC8",
-          authDomain: "peps-interactions.firebaseapp.com",
-          projectId: "peps-interactions",
-          storageBucket: "peps-interactions.firebasestorage.app",
-          messagingSenderId: "195505715234",
-          appId: "1:195505715234:web:f2245e3b0f4603788a327b"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        // Sessions par défaut
-        let sessionsData = [
-            {
-                id: "session_1",
-                title: "Session 1 : Négociation & Achats",
-                questions: [
-                    { id: "q1", type: "open", text: "Quels sont vos premiers retours sur le cas pratique ?" },
-                    { id: "q2", type: "mcq", text: "Quels sont les objectifs clés de la MESORE (BATNA) ?", options: ["Obtenir le prix le plus bas possible", "Identifier sa meilleure alternative de repli", "Instaurer un climat d'échange constructif", "Éviter d'accepter un accord défavorable"], correctIndices: [1, 3] },
-                    { id: "q3", type: "wordcloud", text: "En un mot, qu'évoque pour vous une négociation réussie ?" },
-                    { id: "q4", type: "poll", text: "Quel canal privilégiez-vous pour vos briefs fournisseurs ?", options: ["Email formel", "Appui téléphonique", "Réunion en présentiel", "Atelier collaboratif"] }
-                ]
-            }
-        ];
-
-        let currentSessionIndex = 0;
-        let currentQIndex = 0;
-        let isStudent = window.location.search.includes('role=student');
-        let chartInstance = null;
-        let editableSessions = [];
-
-        const pastelColors = ['#38bdf8', '#818cf8', '#34d399', '#f472b6', '#fbbf24', '#a78bfa', '#2dd4bf', '#fb7185'];
-
-        if (isStudent) {
-            document.getElementById('teacher-view').style.display = 'none';
-            document.getElementById('student-view').style.display = 'block';
-            listenCurrentStateStudent();
-        } else {
-            initTeacherView();
-        }
-
-        // --- VUE ENSEIGNANTE ---
-        function initTeacherView() {
-            new QRCode(document.getElementById("qrcode"), {
-                text: window.location.origin + window.location.pathname.replace('app.html', 'index.html') + "?role=student",
-                width: 160,
-                height: 160
-            });
-            loadActiveSessionFromCloud();
-        }
-
-        function loadActiveSessionFromCloud() {
-            db.collection("state").doc("active").get().then(doc => {
-                if (doc.exists) {
-                    const data = doc.data();
-                    if (data.sessionsData) sessionsData = data.sessionsData;
-                    if (data.sessionIndex !== undefined) currentSessionIndex = data.sessionIndex;
-                    if (data.qIndex !== undefined) currentQIndex = data.qIndex;
-                }
-                publishCurrentState();
-                listenToAnswers();
-            }).catch(() => {
-                publishCurrentState();
-                listenToAnswers();
-            });
-        }
-
-        function publishCurrentState() {
-            const currentSession = sessionsData[currentSessionIndex] || sessionsData[0];
-            const q = currentSession.questions[currentQIndex] || currentSession.questions[0];
-
-            db.collection("state").doc("active").set({
-                sessionIndex: currentSessionIndex,
-                qIndex: currentQIndex,
-                question: q,
-                sessionTitle: currentSession.title,
-                sessionsData: sessionsData
-            });
-
-            document.getElementById("q-text").innerText = q.text;
-            document.getElementById("q-number").innerText = `Q ${currentQIndex + 1}/${currentSession.questions.length}`;
-            document.getElementById("session-title").innerText = currentSession.title;
-        }
-
-        function listenToAnswers() {
-            const currentSession = sessionsData[currentSessionIndex];
-            const q = currentSession.questions[currentQIndex];
-            db.collection("answers").doc(q.id).onSnapshot(doc => {
-                const data = doc.exists ? doc.data() : { responses: [] };
-                renderResults(q, data.responses || []);
-            });
-        }
-
-        function renderResults(q, responses) {
-            const area = document.getElementById("display-area");
-            document.getElementById("answers-count").innerText = `${responses.length} participation(s)`;
-            area.innerHTML = "";
-
-            if (q.type === "mcq" || q.type === "poll") {
-                const canvas = document.createElement("canvas");
-                area.appendChild(canvas);
-                
-                const counts = {};
-                if(q.options) q.options.forEach(opt => counts[opt] = 0);
-                
-                responses.forEach(r => {
-                    if (Array.isArray(r)) {
-                        r.forEach(val => { if (counts[val] !== undefined) counts[val]++; });
-                    } else if (counts[r] !== undefined) {
-                        counts[r]++;
-                    }
-                });
-
-                let backgroundColors = pastelColors.slice(0, (q.options || []).length);
-                if (q.type === "mcq" && q.correctIndices && Array.isArray(q.correctIndices)) {
-                    backgroundColors = q.options.map((_, idx) => q.correctIndices.includes(idx) ? '#10b981' : '#334155');
-                }
-
-                if (chartInstance) chartInstance.destroy();
-                chartInstance = new Chart(canvas, {
-                    type: 'bar',
-                    data: {
-                        labels: q.options || [],
-                        datasets: [{
-                            label: 'Votes',
-                            data: Object.values(counts),
-                            backgroundColor: backgroundColors,
-                            borderRadius: 6
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: { 
-                            y: { beginAtZero: true, ticks: { stepSize: 1, color: '#94a3b8' }, grid: { color: '#334155' } },
-                            x: { ticks: { color: '#f8fafc', font: { size: 14 } }, grid: { display: false } }
-                        },
-                        plugins: { legend: { display: false } }
-                    }
-                });
-            } else if (q.type === "wordcloud") {
-                const cloudDiv = document.createElement("div");
-                cloudDiv.className = "cloud-container";
-                
-                const freq = {};
-                responses.forEach(r => {
-                    const word = String(r).trim().toLowerCase();
-                    if (word) freq[word] = (freq[word] || 0) + 1;
-                });
-
-                const words = Object.keys(freq);
-                if (words.length === 0) {
-                    cloudDiv.innerHTML = "<p style='color: var(--text-muted); font-size: 1.2rem;'>Les réponses vont apparaître ici en direct...</p>";
-                } else {
-                    words.forEach((word, index) => {
-                        const span = document.createElement("span");
-                        span.className = "cloud-word";
-                        span.innerText = word;
-                        span.style.fontSize = `${Math.min(1.2 + freq[word] * 0.5, 3.5)}rem`;
-                        span.style.color = pastelColors[index % pastelColors.length];
-                        span.style.background = 'rgba(255,255,255,0.05)';
-                        span.style.border = `1px solid ${pastelColors[index % pastelColors.length]}44`;
-                        cloudDiv.appendChild(span);
-                    });
-                }
-                area.appendChild(cloudDiv);
-            } else if (q.type === "open") {
-                const postsDiv = document.createElement("div");
-                postsDiv.className = "posts-container";
-                
-                if (responses.length === 0) {
-                    postsDiv.innerHTML = "<p style='color: var(--text-muted); grid-column: 1/-1; text-align: center; font-size: 1.2rem;'>En attente des premiers post-its des étudiants...</p>";
-                } else {
-                    const postColors = ['#fef08a', '#bbf7d0', '#bae6fd', '#fde68a', '#e9d5ff', '#fbcfe8'];
-                    responses.forEach((r, idx) => {
-                        const item = document.createElement("div");
-                        item.className = "post-it";
-                        item.innerText = r;
-                        item.style.background = postColors[idx % postColors.length];
-                        item.style.setProperty('--rot', `${(idx % 5 - 2) * 1.5}deg`);
-                        postsDiv.appendChild(item);
-                    });
-                }
-                area.appendChild(postsDiv);
-            }
-        }
-
-        function nextQuestion() {
-            const currentSession = sessionsData[currentSessionIndex];
-            if (currentQIndex < currentSession.questions.length - 1) {
-                currentQIndex++;
-                publishCurrentState();
-                listenToAnswers();
-            } else if (currentSessionIndex < sessionsData.length - 1) {
-                currentSessionIndex++;
-                currentQIndex = 0;
-                publishCurrentState();
-                listenToAnswers();
-            }
-        }
-
-        function prevQuestion() {
-            if (currentQIndex > 0) {
-                currentQIndex--;
-                publishCurrentState();
-                listenToAnswers();
-            } else if (currentSessionIndex > 0) {
-                currentSessionIndex--;
-                const currentSession = sessionsData[currentSessionIndex];
-                currentQIndex = currentSession.questions.length - 1;
-                publishCurrentState();
-                listenToAnswers();
-            }
-        }
-
-        function resetCurrentAnswers() {
-            const currentSession = sessionsData[currentSessionIndex];
-            const q = currentSession.questions[currentQIndex];
-            if(confirm(`Réinitialiser les réponses pour la question : "${q.text}" ?`)) {
-                db.collection("answers").doc(q.id).set({ responses: [] });
-            }
-        }
-
-        function resetAllSessionAnswers() {
-            const currentSession = sessionsData[currentSessionIndex];
-            if(confirm(`Voulez-vous vraiment réinitialiser TOUTES les réponses de la session "${currentSession.title}" ?`)) {
-                const batch = db.batch();
-                currentSession.questions.forEach(q => {
-                    batch.set(db.collection("answers").doc(q.id), { responses: [] });
-                });
-                batch.commit().then(() => alert("Toutes les réponses de la session ont été effacées !"));
-            }
-        }
-
-        function takeScreenshot() {
-            const captureElement = document.getElementById("capture-area");
-            html2canvas(captureElement, { backgroundColor: '#1e293b' }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `peps-interactions-${Date.now()}.png`;
-                link.href = canvas.toDataURL();
-                link.click();
-            });
-        }
-
-        // --- VUE ÉTUDIANT ---
-        function listenCurrentStateStudent() {
-            db.collection("state").doc("active").onSnapshot(doc => {
-                if (!doc.exists) return;
-                const data = doc.data();
-                const q = data.question;
-
-                document.getElementById("student-q-text").innerHTML = `
-                    <div style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 1px;">Question en cours</div>
-                    ${q.text}
-                `;
-                const area = document.getElementById("student-input-area");
-                area.innerHTML = "";
-                document.getElementById("student-feedback").style.display = "none";
-
-                if (q.type === "mcq" || q.type === "poll") {
-                    if(q.options) {
-                        let selectedOptions = [];
-                        
-                        q.options.forEach(opt => {
-                            const btn = document.createElement("button");
-                            btn.className = "opt-btn";
-                            btn.innerText = opt;
-                            btn.onclick = () => {
-                                if (q.type === "mcq") {
-                                    // Choix multiples
-                                    if (selectedOptions.includes(opt)) {
-                                        selectedOptions = selectedOptions.filter(item => item !== opt);
-                                        btn.classList.remove('selected');
-                                    } else {
-                                        selectedOptions.push(opt);
-                                        btn.classList.add('selected');
-                                    }
-                                } else {
-                                    // Choix unique pour sondage
-                                    document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
-                                    btn.classList.add('selected');
-                                    selectedOptions = [opt];
-                                }
-                            };
-                            area.appendChild(btn);
-                        });
-
-                        const submitBtn = document.createElement("button");
-                        submitBtn.style.width = "100%";
-                        submitBtn.style.marginTop = "1rem";
-                        submitBtn.style.padding = "0.9rem";
-                        submitBtn.style.fontSize = "1.1rem";
-                        submitBtn.style.background = "var(--success)";
-                        submitBtn.innerText = "🚀 Envoyer ma sélection";
-                        submitBtn.onclick = () => {
-                            if (selectedOptions.length === 0) {
-                                alert("Merci de sélectionner au moins une option !");
-                                return;
-                            }
-                            submitAnswer(q.id, q.type === "mcq" ? selectedOptions : selectedOptions[0], false);
-                        };
-                        area.appendChild(submitBtn);
-                    }
-                } else {
-                    const input = document.createElement("input");
-                    input.type = "text";
-                    input.id = "txt-answer";
-                    input.placeholder = q.type === "wordcloud" ? "Tapez un mot-clé..." : "Partagez votre idée ici...";
-                    
-                    const btn = document.createElement("button");
-                    btn.style.width = "100%";
-                    btn.style.marginTop = "0.5rem";
-                    btn.style.padding = "0.9rem";
-                    btn.style.fontSize = "1.1rem";
-                    btn.innerText = "💡 Partager la réponse";
-                    
-                    btn.onclick = () => {
-                        const val = document.getElementById("txt-answer").value.trim();
-                        if (val) {
-                            submitAnswer(q.id, val, true);
-                            document.getElementById("txt-answer").value = "";
-                        }
-                    };
-
-                    input.onkeydown = (e) => { if(e.key === 'Enter') btn.click(); };
-
-                    area.appendChild(input);
-                    area.appendChild(btn);
-                }
-            });
-        }
-
-        function submitAnswer(qId, value, allowMultiple) {
-            db.collection("answers").doc(qId).set({
-                responses: firebase.firestore.FieldValue.arrayUnion(value)
-            }, { merge: true }).then(() => {
-                const feedback = document.getElementById("student-feedback");
-                feedback.style.display = "block";
-                setTimeout(() => { feedback.style.display = "none"; }, 2500);
-            });
-        }
-
-        // --- ÉDITEUR DE SESSIONS AVANCÉ ---
-        function openEditor() {
-            editableSessions = JSON.parse(JSON.stringify(sessionsData));
-            renderEditorForm();
-            document.getElementById("editor-modal").style.display = "flex";
-        }
-
-        function closeEditor() {
-            document.getElementById("editor-modal").style.display = "none";
-        }
-
-        function renderEditorForm() {
-            const container = document.getElementById("sessions-editor-container");
-            container.innerHTML = "";
-
-            editableSessions.forEach((session, sIdx) => {
-                const sDiv = document.createElement("div");
-                sDiv.className = "session-block";
-                sDiv.innerHTML = `
-                    <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
-                        <input type="text" value="${session.title}" oninput="editableSessions[${sIdx}].title = this.value" placeholder="Titre du cours / de la session" style="margin-bottom:0; font-weight:bold;">
-                        <button onclick="removeSession(${sIdx})" style="background: var(--danger); padding: 0.6rem 1rem;">Supprimer la Session</button>
-                    </div>
-                    <div id="questions-container-${sIdx}"></div>
-                    <button onclick="addQuestion(${sIdx})" style="background: #2563eb; margin-top: 1rem; font-size:0.9rem;">➕ Ajouter une question à ce cours</button>
-                `;
-                container.appendChild(sDiv);
-
-                const qContainer = sDiv.querySelector(`#questions-container-${sIdx}`);
-                session.questions.forEach((q, qIdx) => {
-                    const qDiv = document.createElement("div");
-                    qDiv.className = "question-block";
-                    
-                    let optionsHtml = "";
-                    if (q.type === "mcq" || q.type === "poll") {
-                        if (!q.correctIndices) q.correctIndices = q.correctIndex !== undefined ? [q.correctIndex] : [];
-                        
-                        optionsHtml = `<div style="margin-top: 0.75rem;"><label style="font-size:0.9rem; color:var(--text-muted);">Propositions de réponse (cochez la ou les bonnes réponses pour le QCM) :</label>`;
-                        
-                        (q.options || []).forEach((opt, oIdx) => {
-                            const isChecked = q.correctIndices.includes(oIdx) ? "checked" : "";
-                            optionsHtml += `
-                                <div class="option-row">
-                                    <input type="checkbox" ${isChecked} onchange="toggleCorrectIndex(${sIdx}, ${qIdx}, ${oIdx}, this.checked)" title="Marquer comme bonne réponse" style="width: 20px; height: 20px; cursor: pointer;">
-                                    <input type="text" value="${opt}" oninput="editableSessions[${sIdx}].questions[${qIdx}].options[${oIdx}] = this.value" placeholder="Option ${oIdx+1}" style="margin-bottom:0;">
-                                    <button onclick="removeOption(${sIdx}, ${qIdx}, ${oIdx})" style="background: #ef4444; padding: 0.5rem 0.8rem;">✕</button>
-                                </div>
-                            `;
-                        });
-                        optionsHtml += `<button onclick="addOption(${sIdx}, ${qIdx})" style="background: #475569; font-size: 0.8rem; margin-top:0.5rem;">+ Ajouter une proposition</button></div>`;
-                    }
-
-                    qDiv.innerHTML = `
-                        <div style="display: flex; gap: 1rem; align-items: center;">
-                            <input type="text" value="${q.text}" oninput="editableSessions[${sIdx}].questions[${qIdx}].text = this.value" placeholder="Énoncez votre question ici..." style="margin-bottom:0; flex-grow:1;">
-                            <select onchange="changeQuestionType(${sIdx}, ${qIdx}, this.value)" style="width: 190px; margin-bottom:0;">
-                                <option value="open" ${q.type==='open'?'selected':''}>Question ouverte (Post-its)</option>
-                                <option value="wordcloud" ${q.type==='wordcloud'?'selected':''}>Nuage de mots</option>
-                                <option value="mcq" ${q.type==='mcq'?'selected':''}>QCM (Bonnes réponses)</option>
-                                <option value="poll" ${q.type==='poll'?'selected':''}>Sondage (Opinion)</option>
-                            </select>
-                            <button onclick="removeQuestion(${sIdx}, ${qIdx})" style="background: var(--danger); padding: 0.5rem 0.8rem;">🗑️</button>
-                        </div>
-                        ${optionsHtml}
-                    `;
-                    qContainer.appendChild(qDiv);
-                });
-            });
-        }
-
-        function toggleCorrectIndex(sIdx, qIdx, oIdx, isChecked) {
-            if (!editableSessions[sIdx].questions[qIdx].correctIndices) {
-                editableSessions[sIdx].questions[qIdx].correctIndices = [];
-            }
-            if (isChecked) {
-                if (!editableSessions[sIdx].questions[qIdx].correctIndices.includes(oIdx)) {
-                    editableSessions[sIdx].questions[qIdx].correctIndices.push(oIdx);
-                }
-            } else {
-                editableSessions[sIdx].questions[qIdx].correctIndices = editableSessions[sIdx].questions[qIdx].correctIndices.filter(i => i !== oIdx);
-            }
-        }
-
-        function addSession() {
-            editableSessions.push({
-                id: "session_" + Date.now(),
-                title: "Nouveau Cours / Nouvelle Session",
-                questions: [{ id: "q_" + Date.now(), type: "open", text: "Nouvelle question ?" }]
-            });
-            renderEditorForm();
-        }
-
-        function removeSession(sIdx) {
-            if(editableSessions.length > 1) {
-                editableSessions.splice(sIdx, 1);
-                renderEditorForm();
-            } else {
-                alert("Il faut conserver au moins une session !");
-            }
-        }
-
-        function addQuestion(sIdx) {
-            editableSessions[sIdx].questions.push({
-                id: "q_" + Date.now(),
-                type: "open",
-                text: "Nouvelle question ?"
-            });
-            renderEditorForm();
-        }
-
-        function removeQuestion(sIdx, qIdx) {
-            if(editableSessions[sIdx].questions.length > 1) {
-                editableSessions[sIdx].questions.splice(qIdx, 1);
-                renderEditorForm();
-            } else {
-                alert("Une session doit posséder au minimum une question.");
-            }
-        }
-
-        function changeQuestionType(sIdx, qIdx, newType) {
-            editableSessions[sIdx].questions[qIdx].type = newType;
-            if ((newType === 'mcq' || newType === 'poll') && !editableSessions[sIdx].questions[qIdx].options) {
-                editableSessions[sIdx].questions[qIdx].options = ["Option A", "Option B"];
-                editableSessions[sIdx].questions[qIdx].correctIndices = [0];
-            }
-            renderEditorForm();
-        }
-
-        function addOption(sIdx, qIdx) {
-            if(!editableSessions[sIdx].questions[qIdx].options) editableSessions[sIdx].questions[qIdx].options = [];
-            editableSessions[sIdx].questions[qIdx].options.push("Nouvelle option");
-            renderEditorForm();
-        }
-
-        function removeOption(sIdx, qIdx, oIdx) {
-            if(editableSessions[sIdx].questions[qIdx].options.length > 2) {
-                editableSessions[sIdx].questions[qIdx].options.splice(oIdx, 1);
-                if(editableSessions[sIdx].questions[qIdx].correctIndices) {
-                    editableSessions[sIdx].questions[qIdx].correctIndices = editableSessions[sIdx].questions[qIdx].correctIndices
-                        .filter(i => i !== oIdx)
-                        .map(i => i > oIdx ? i - 1 : i);
-                }
-                renderEditorForm();
-            } else {
-                alert("Prévoyez au moins 2 propositions de réponse.");
-            }
-        }
-
-        function saveAllSessions() {
-            sessionsData = editableSessions;
-            currentSessionIndex = 0;
-            currentQIndex = 0;
-            publishCurrentState();
-            listenToAnswers();
-            closeEditor();
-        }
-
-        function clearFirestoreDatabase() {
-            if (confirm("⚠️ Souhaitez-vous réinitialiser toutes les réponses enregistrées dans la base globale ?")) {
-                const batch = db.batch();
-                sessionsData.forEach(session => {
-                    session.questions.forEach(q => {
-                        batch.set(db.collection("answers").doc(q.id), { responses: [] });
-                    });
-                });
-                batch.commit().then(() => {
-                    alert("Base globale réinitialisée avec succès !");
-                    closeEditor();
-                    listenToAnswers();
-                });
-            }
-        }
-    </script>
+  </div>
+  <div class="bar">
+    <button class="ghost" onclick="step(-1)">◀ Précédente</button>
+    <b id="qnum" style="min-width:64px;text-align:center">1/1</b>
+    <button class="ghost" onclick="step(1)">Suivante ▶</button>
+    <span class="sep"></span>
+    <button class="ok" id="revealBtn" onclick="toggleReveal()" style="display:none">✔ Correction</button>
+    <button class="warn" onclick="resetQ()">Vider la question</button>
+    <button class="bad" onclick="resetSession()">Vider la session</button>
+    <span class="sep"></span>
+    <button onclick="openEditor()">⚙ Éditeur</button>
+  </div>
+</div>
+ 
+<div id="student">
+  <h2 style="text-align:center;margin-top:.8rem">PEPS Interactions</h2>
+  <div class="scard">
+    <div id="sq" style="font-size:1.25rem;font-weight:700;text-align:center;margin-bottom:1rem">En attente de la prochaine question…</div>
+    <div id="sin"></div>
+    <div class="fb" id="sfb">Réponse envoyée, merci !</div>
+  </div>
+</div>
+ 
+<div id="modal"><div class="mbody">
+  <h2>Éditeur de sessions</h2>
+  <p style="color:var(--muted);margin:.4rem 0 1.2rem">Créez vos questions, dupliquez une session pour l'autre groupe (les réponses restent séparées), puis enregistrez.</p>
+  <div id="seditor"></div>
+  <button class="ok" onclick="addSession()">+ Nouvelle session</button>
+  <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;border-top:1px solid var(--line);margin-top:1.5rem;padding-top:1.2rem">
+    <button class="bad" onclick="clearAll()">Vider toutes les réponses</button>
+    <div style="display:flex;gap:.6rem"><button class="ghost" onclick="closeEditor()">Annuler</button><button class="ok" onclick="saveAll()">Enregistrer</button></div>
+  </div>
+</div></div>
+ 
+<script>
+// ⚠️ Changez ce code d'accès enseignante
+const TEACHER_PIN = "peps2025";
+ 
+firebase.initializeApp({
+  apiKey:"AIzaSyDter1HkLbMMIw5SZT-c6iiG_LcSMkciC8",authDomain:"peps-interactions.firebaseapp.com",
+  projectId:"peps-interactions",storageBucket:"peps-interactions.firebasestorage.app",
+  messagingSenderId:"195505715234",appId:"1:195505715234:web:f2245e3b0f4603788a327b"});
+const db=firebase.firestore();
+ 
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const clone=o=>JSON.parse(JSON.stringify(o));
+const COLORS=['#38bdf8','#a78bfa','#34d399','#f472b6','#fbbf24','#fb7185','#2dd4bf','#818cf8'];
+const POSTS=['#fef08a','#bbf7d0','#bae6fd','#fed7aa','#e9d5ff','#fbcfe8'];
+ 
+let sessions=[{id:"session_1",title:"Session 1 – Groupe A",questions:[
+  {id:"q1",type:"open",text:"Quels sont vos premiers retours sur le cas pratique ?"},
+  {id:"q2",type:"mcq",multiple:true,text:"Quels sont les objectifs clés de la MESORE (BATNA) ?",options:["Obtenir le prix le plus bas possible","Identifier sa meilleure alternative de repli","Instaurer un climat d'échange constructif","Éviter d'accepter un accord défavorable"],correctIndices:[1,3]},
+  {id:"q3",type:"wordcloud",text:"En un mot, qu'évoque pour vous une négociation réussie ?"},
+  {id:"q4",type:"poll",text:"Quel canal privilégiez-vous pour vos briefs fournisseurs ?",options:["Email formel","Appel téléphonique","Réunion en présentiel","Atelier collaboratif"]}]}];
+let sIdx=0,qIdx=0,reveal=false,chart=null,unsub=null,editable=[];
+ 
+const role=new URLSearchParams(location.search).get("role");
+if(role==="teacher"){
+  if(sessionStorage.pepsOk==="1"||prompt("Code d'accès enseignante :")===TEACHER_PIN){
+    sessionStorage.pepsOk="1";initTeacher();
+  } else document.body.innerHTML="<p style='padding:2rem'>Accès refusé.</p>";
+}else initStudent();
+ 
+/* ========== ENSEIGNANTE ========== */
+function initTeacher(){
+  document.getElementById("teacher").style.display="flex";
+  const link=location.origin+location.pathname;
+  new QRCode(document.getElementById("qrcode"),{text:link,width:170,height:170});
+  document.getElementById("url").textContent=link;
+  db.collection("state").doc("config").get().then(d=>{
+    if(d.exists&&d.data().sessions)sessions=d.data().sessions;
+    return db.collection("state").doc("active").get();
+  }).then(d=>{
+    if(d.exists){sIdx=d.data().sIdx||0;qIdx=d.data().qIdx||0}
+    if(!sessions[sIdx]){sIdx=0;qIdx=0}
+    publish();
+  }).catch(()=>publish());
+}
+const curQ=()=>sessions[sIdx].questions[qIdx];
+ 
+function pubQ(q){ // version « élève » : sans les bonnes réponses
+  const o={id:q.id,type:q.type,text:q.text,multiple:!!q.multiple};
+  if(q.options)o.options=q.options;
+  return o;
+}
+function saveConfig(){return db.collection("state").doc("config").set({sessions:clone(sessions)})}
+function publish(){
+  reveal=false;
+  const q=curQ();
+  db.collection("state").doc("active").set({sIdx,qIdx,question:pubQ(q)});
+  const sel=document.getElementById("ssel");
+  sel.innerHTML=sessions.map((s,i)=>`<option value="${i}" ${i===sIdx?"selected":""}>${esc(s.title)}</option>`).join("");
+  document.getElementById("stitle").textContent=`Question ${qIdx+1}/${sessions[sIdx].questions.length}`;
+  document.getElementById("qnum").textContent=`${qIdx+1}/${sessions[sIdx].questions.length}`;
+  document.getElementById("qtext").textContent=q.text;
+  document.getElementById("qhint").textContent=(q.type==="mcq"||q.type==="poll")?(q.multiple?"Plusieurs réponses possibles":"Une seule réponse"):"";
+  document.getElementById("revealBtn").style.display=q.type==="mcq"?"":"none";
+  document.getElementById("revealBtn").textContent="✔ Correction";
+  listen();
+}
+function listen(){
+  if(unsub)unsub();
+  const q=curQ();
+  unsub=db.collection("answers").doc(q.id).onSnapshot(d=>{
+    window._resp=d.exists?(d.data().responses||[]):[];
+    render();
+  });
+}
+function toggleReveal(){reveal=!reveal;document.getElementById("revealBtn").textContent=reveal?"Masquer la correction":"✔ Correction";render()}
+const val=r=>(r&&typeof r==="object"&&"v" in r)?r.v:r;
+ 
+function render(){
+  const q=curQ(),resp=(window._resp||[]).map(val),area=document.getElementById("display");
+  document.getElementById("count").textContent=`${resp.length} participation${resp.length>1?"s":""}`;
+  area.innerHTML="";
+  if(chart){chart.destroy();chart=null}
+  if(q.type==="mcq"||q.type==="poll"){
+    const box=document.createElement("div");box.className="chartbox";
+    const cv=document.createElement("canvas");box.appendChild(cv);area.appendChild(box);
+    const opts=q.options||[],counts=opts.map(()=>0);
+    resp.forEach(r=>(Array.isArray(r)?r:[r]).forEach(v=>{const i=opts.indexOf(v);if(i>=0)counts[i]++}));
+    const ok=q.correctIndices||[];
+    const bg=opts.map((_,i)=>(q.type==="mcq"&&reveal)?(ok.includes(i)?"#16a34a":"#334155"):COLORS[i%COLORS.length]);
+    chart=new Chart(cv,{type:"bar",data:{labels:opts,datasets:[{data:counts,backgroundColor:bg,borderRadius:6}]},
+      options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,animation:{duration:300},
+        scales:{x:{beginAtZero:true,ticks:{stepSize:1,color:"#8a99b5"},grid:{color:"#24324f"}},y:{ticks:{color:"#e8edf6",font:{size:15}},grid:{display:false}}},
+        plugins:{legend:{display:false}}}});
+  }else if(q.type==="wordcloud"){
+    const div=document.createElement("div");div.className="cloud";
+    const f={};resp.forEach(r=>{const w=String(r).trim().toLowerCase();if(w)f[w]=(f[w]||0)+1});
+    const ws=Object.keys(f);
+    if(!ws.length)div.innerHTML='<p class="empty">Les mots apparaîtront ici en direct…</p>';
+    ws.forEach((w,i)=>{const s=document.createElement("span"),c=COLORS[i%COLORS.length];
+      s.className="cw";s.textContent=w;s.style.fontSize=Math.min(1.3+f[w]*.6,4)+"rem";s.style.color=c;s.style.background=c+"1f";s.style.border=`1px solid ${c}55`;div.appendChild(s)});
+    area.appendChild(div);
+  }else{
+    const div=document.createElement("div");div.className="posts";
+    if(!resp.length)div.innerHTML='<p class="empty" style="grid-column:1/-1">En attente des premiers post-its…</p>';
+    resp.forEach((r,i)=>{const p=document.createElement("div");p.className="post";p.textContent=r;
+      p.style.background=POSTS[i%POSTS.length];p.style.setProperty("--r",((i%5)-2)*1.5+"deg");div.appendChild(p)});
+    area.appendChild(div);
+  }
+}
+function goTo(s,q){sIdx=s;qIdx=q;publish()}
+function step(d){
+  const n=sessions[sIdx].questions.length;
+  if(d>0){if(qIdx<n-1)qIdx++;else if(sIdx<sessions.length-1){sIdx++;qIdx=0}}
+  else{if(qIdx>0)qIdx--;else if(sIdx>0){sIdx--;qIdx=sessions[sIdx].questions.length-1}}
+  publish();
+}
+function resetQ(){if(confirm("Vider les réponses de cette question ?"))db.collection("answers").doc(curQ().id).set({responses:[]})}
+function wipe(list){const b=db.batch();list.forEach(q=>b.set(db.collection("answers").doc(q.id),{responses:[]}));return b.commit()}
+function resetSession(){if(confirm(`Vider TOUTES les réponses de « ${sessions[sIdx].title} » ?`))wipe(sessions[sIdx].questions)}
+function shot(){
+  html2canvas(document.getElementById("capture"),{backgroundColor:"#111a2e"}).then(c=>{
+    const a=document.createElement("a");a.download=`peps-${sessions[sIdx].title.replace(/\W+/g,"_")}-Q${qIdx+1}.png`;a.href=c.toDataURL();a.click()});
+}
+ 
+/* ========== ÉDITEUR ========== */
+function openEditor(){editable=clone(sessions);drawEditor();document.getElementById("modal").style.display="flex"}
+function closeEditor(){document.getElementById("modal").style.display="none"}
+function drawEditor(){
+  const c=document.getElementById("seditor");c.innerHTML="";
+  editable.forEach((s,si)=>{
+    const d=document.createElement("div");d.className="sb";
+    d.innerHTML=`<div class="row" style="margin:0 0 .6rem"><input type="text" value="${esc(s.title)}" oninput="editable[${si}].title=this.value" style="font-weight:700">
+      <button class="ghost" onclick="dupSession(${si})">Dupliquer</button><button class="bad" onclick="delSession(${si})">Supprimer</button></div>`;
+    s.questions.forEach((q,qi)=>{
+      const mc=q.type==="mcq",ch=q.type==="mcq"||q.type==="poll";
+      const e=document.createElement("div");e.className="qb";
+      let h=`<div class="row" style="margin:0"><input type="text" value="${esc(q.text)}" oninput="editable[${si}].questions[${qi}].text=this.value" placeholder="Votre question">
+        <select style="width:200px" onchange="setType(${si},${qi},this.value)">
+          ${[["open","Question ouverte"],["wordcloud","Nuage de mots"],["mcq","QCM"],["poll","Sondage"]].map(([v,l])=>`<option value="${v}" ${q.type===v?"selected":""}>${l}</option>`).join("")}</select>
+        <button class="bad" onclick="delQ(${si},${qi})">🗑</button></div>`;
+      if(ch){
+        h+=`<label class="lbl"><input type="checkbox" ${q.multiple?"checked":""} onchange="editable[${si}].questions[${qi}].multiple=this.checked"> Plusieurs réponses possibles pour les étudiants</label>`;
+        if(mc)h+=`<div class="lbl">Cochez la ou les bonnes réponses :</div>`;
+        (q.options||[]).forEach((o,oi)=>{
+          h+=`<div class="row">${mc?`<input type="checkbox" ${(q.correctIndices||[]).includes(oi)?"checked":""} onchange="toggleOk(${si},${qi},${oi},this.checked)" title="Bonne réponse">`:""}
+            <input type="text" value="${esc(o)}" oninput="editable[${si}].questions[${qi}].options[${oi}]=this.value">
+            <button class="ghost" onclick="delOpt(${si},${qi},${oi})">✕</button></div>`});
+        h+=`<button class="ghost" style="margin-top:.6rem" onclick="addOpt(${si},${qi})">+ Proposition</button>`;
+      }
+      e.innerHTML=h;d.appendChild(e);
+    });
+    const b=document.createElement("button");b.textContent="+ Question";b.style.marginTop="1rem";b.onclick=()=>{s.questions.push({id:"q_"+uid(),type:"open",text:"Nouvelle question ?"});drawEditor()};
+    d.appendChild(b);c.appendChild(d);
+  });
+}
+const EQ=(s,q)=>editable[s].questions[q];
+function toggleOk(s,q,o,on){const x=EQ(s,q);x.correctIndices=(x.correctIndices||[]).filter(i=>i!==o);if(on)x.correctIndices.push(o)}
+function setType(s,q,t){const x=EQ(s,q);x.type=t;
+  if((t==="mcq"||t==="poll")&&!x.options){x.options=["Option A","Option B"];x.correctIndices=[0]}drawEditor()}
+function addOpt(s,q){(EQ(s,q).options=EQ(s,q).options||[]).push("Nouvelle option");drawEditor()}
+function delOpt(s,q,o){const x=EQ(s,q);if(x.options.length<=2)return alert("Minimum 2 propositions.");
+  x.options.splice(o,1);x.correctIndices=(x.correctIndices||[]).filter(i=>i!==o).map(i=>i>o?i-1:i);drawEditor()}
+function delQ(s,q){if(editable[s].questions.length<=1)return alert("Une session doit avoir au moins une question.");editable[s].questions.splice(q,1);drawEditor()}
+function addSession(){editable.push({id:"session_"+uid(),title:"Nouvelle session",questions:[{id:"q_"+uid(),type:"open",text:"Nouvelle question ?"}]});drawEditor()}
+function dupSession(i){ // nouveaux ID → réponses du groupe 2 séparées de celles du groupe 1
+  const s=clone(editable[i]);s.id="session_"+uid();s.title+=" (copie)";
+  s.questions.forEach(q=>q.id="q_"+uid());editable.splice(i+1,0,s);drawEditor()}
+function delSession(i){if(editable.length<=1)return alert("Gardez au moins une session.");if(confirm("Supprimer cette session ?")){editable.splice(i,1);drawEditor()}}
+function saveAll(){
+  sessions=clone(editable);sIdx=Math.min(sIdx,sessions.length-1);qIdx=0;
+  saveConfig().then(()=>{publish();closeEditor()});
+}
+function clearAll(){
+  if(!confirm("Vider les réponses de TOUTES les sessions ?"))return;
+  wipe(editable.flatMap(s=>s.questions)).then(()=>alert("Toutes les réponses ont été effacées."));
+}
+ 
+/* ========== ÉTUDIANTS ========== */
+let lastQ=null;const done=new Set();
+function initStudent(){
+  document.getElementById("student").style.display="block";
+  db.collection("state").doc("active").onSnapshot(d=>{
+    if(!d.exists)return;
+    const q=d.data().question;if(!q||q.id===lastQ)return;lastQ=q.id;
+    document.getElementById("sq").textContent=q.text;
+    document.getElementById("sfb").style.display="none";
+    const area=document.getElementById("sin");area.innerHTML="";
+    if(q.options){
+      let sel=[];
+      const hint=document.createElement("p");hint.style.cssText="text-align:center;color:var(--muted);margin-bottom:.8rem;font-size:.9rem";
+      hint.textContent=q.multiple?"Plusieurs réponses possibles":"Une seule réponse";area.appendChild(hint);
+      q.options.forEach(o=>{
+        const b=document.createElement("button");b.className="opt";
+        b.innerHTML=`<span class="box" style="border-radius:${q.multiple?"5px":"50%"}"></span><span>${esc(o)}</span>`;
+        b.onclick=()=>{
+          if(q.multiple){sel=sel.includes(o)?sel.filter(x=>x!==o):[...sel,o];b.classList.toggle("sel")}
+          else{area.querySelectorAll(".opt").forEach(x=>x.classList.remove("sel"));b.classList.add("sel");sel=[o]}};
+        area.appendChild(b)});
+      const s=document.createElement("button");s.textContent="Envoyer";s.style.cssText="width:100%;margin-top:.6rem;padding:.9rem;font-size:1.05rem";
+      s.onclick=()=>{if(done.has(q.id))return alert("Vous avez déjà répondu.");if(!sel.length)return alert("Sélectionnez au moins une option.");
+        done.add(q.id);s.disabled=true;send(q.id,q.multiple?sel:sel[0])};
+      area.appendChild(s);
+    }else{
+      const i=document.createElement("input");i.type="text";i.maxLength=200;i.placeholder=q.type==="wordcloud"?"Un mot…":"Votre réponse…";
+      const b=document.createElement("button");b.textContent="Envoyer";b.style.cssText="width:100%;margin-top:.6rem;padding:.9rem;font-size:1.05rem";
+      b.onclick=()=>{const v=i.value.trim();if(v){send(q.id,v);i.value=""}};
+      i.onkeydown=e=>{if(e.key==="Enter")b.click()};
+      area.appendChild(i);area.appendChild(b);
+    }
+  });
+}
+function send(qId,v){
+  // objet avec identifiant unique : évite que deux réponses identiques soient fusionnées par Firestore
+  db.collection("answers").doc(qId).set({responses:firebase.firestore.FieldValue.arrayUnion({id:uid(),v})},{merge:true}).then(()=>{
+    const f=document.getElementById("sfb");f.style.display="block";setTimeout(()=>f.style.display="none",2500)});
+}
+</script>
 </body>
 </html>
+ 
