@@ -9,7 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f3f5fa;--panel:#ffffff;--panel2:#eef1f8;--line:#d9dfec;--text:#0f172a;--muted:#5b6785;--accent:#4338ca;--accent2:#3730a3;--ok:#15803d;--warn:#d97706;--bad:#dc2626}
 *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
@@ -75,6 +75,38 @@ input[type=text],select{width:100%;padding:.7rem .8rem;border-radius:8px;border:
 .scard,.mbody{box-shadow:0 1px 3px rgba(15,23,42,.1)}
 .post{box-shadow:0 4px 8px rgba(15,23,42,.18)}
 input[type=text],select{background:#fff}
+
+/* ===== Charte graphique « Executive » : encre, teal, or ===== */
+:root{--ink:#0f2a43;--bg:#f4f6f8;--panel:#fff;--panel2:#eef2f5;--line:#dbe2e8;--text:#14212e;--muted:#5d6f80;--accent:#0e7c86;--accent2:#0a626a;--ok:#2f7d5b;--warn:#b45309;--bad:#b91c1c;--gold:#c8952b}
+*{font-family:Inter,"Segoe UI",system-ui,sans-serif}
+button{border-radius:6px;font-weight:600;letter-spacing:.01em}
+.top{background:var(--ink);border-radius:10px;border-bottom:3px solid var(--gold);padding:.75rem 1.3rem}
+.brand{display:flex;align-items:center;gap:.7rem;font-weight:700;letter-spacing:.01em}
+.brand::before{content:"";width:12px;height:12px;background:var(--gold);border-radius:2px;display:inline-block}
+.top select,.top .count{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:6px}
+.top select option{color:#14212e}
+.top button.ghost{border-color:rgba(255,255,255,.25)}.top button.ghost:hover{background:rgba(255,255,255,.1)}
+.stage{border-radius:10px;border:1px solid var(--line);border-top:3px solid var(--accent);box-shadow:0 1px 2px rgba(15,42,67,.06)}
+.qtext{color:var(--ink);font-weight:700;letter-spacing:-.01em}
+.qhint{font-weight:500}
+.side{border-radius:10px;box-shadow:0 1px 2px rgba(15,42,67,.06)}
+.side h3{color:var(--ink);font-size:1.05rem}
+#qrcode{border:1px solid var(--line);border-radius:8px}
+.bar{left:0;right:0;bottom:0;transform:none;max-width:none;border-radius:0;border:0;border-top:1px solid var(--line);background:#fff;box-shadow:0 -4px 16px rgba(15,42,67,.08);padding:.7rem 1rem}
+.bar button.ghost{color:var(--ink)}
+.bar .warn{background:#fff;color:var(--warn);border:1px solid #ecd2a8}.bar .warn:hover{background:#fdf3e2}
+.bar .bad{background:#fff;color:var(--bad);border:1px solid #efc2c2}.bar .bad:hover{background:#fdeaea}
+.bar .sep{background:var(--line)}
+.count{font-weight:600}
+#student{max-width:520px}
+#student h2{font-size:1rem;font-weight:700;color:var(--ink);letter-spacing:.02em;padding-bottom:.8rem;border-bottom:3px solid var(--gold);display:inline-block;margin:.6rem 0 0}
+.scard{border-radius:12px;border-top:3px solid var(--accent)}
+#sq{color:var(--ink)}
+.opt{border-radius:8px;border-width:1.5px;background:#fff}
+.opt:hover{background:var(--panel2)}.opt.sel{background:#e3f2f3;border-color:var(--accent)}
+.mbody{border-radius:12px}.mbody h2{color:var(--ink)}
+.sb{background:var(--panel2)}.qb{background:#fff}
+:focus-visible{outline-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -147,7 +179,8 @@ const db=firebase.firestore();
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const clone=o=>JSON.parse(JSON.stringify(o));
-const COLORS=['#4f46e5','#0891b2','#059669','#db2777','#d97706','#7c3aed','#0d9488','#e11d48'];
+const COLORS=['#0e7c86','#2f5d8a','#c8952b','#6b8aa6','#4f8f6f','#8b5e83','#b4543f','#3d4f66'];
+Chart.defaults.font.family='Inter,Segoe UI,sans-serif';
 const POSTS=['#fef08a','#bbf7d0','#bae6fd','#fed7aa','#e9d5ff','#fbcfe8'];
 
 let sessions=[{id:"session_1",title:"Session 1 – Groupe A",questions:[
